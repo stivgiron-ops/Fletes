@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="theme-color" content="#0f1923"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-title" content="Viajes"/>
+<title>Control de Viajes</title>
+<link rel="manifest" id="mf"/>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700&family=Barlow:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#0f1923;--surface:#16222e;--card:#1c2d3d;--border:#2a3f54;--accent:#f5a623;--accent2:#3b9eff;--text:#e8f0f8;--muted:#7a96b0;--danger:#e05252;--success:#3dbd7d;}
+body{font-family:'Barlow',sans-serif;background:var(--bg);color:var(--text);min-height:100dvh;font-size:15px}
+nav{background:var(--surface);border-bottom:1px solid var(--border);padding:0 16px;display:flex;align-items:center;position:sticky;top:0;z-index:100;overflow-x:auto}
+.nav-brand{font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:700;color:var(--accent);padding:14px 16px 14px 0;border-right:1px solid var(--border);margin-right:8px;letter-spacing:1px;white-space:nowrap}
+.nav-tab{padding:14px 12px;font-size:14px;font-weight:500;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;transition:color .2s,border-color .2s;white-space:nowrap}
+.nav-tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+.sync-status{margin-left:auto;font-size:12px;font-family:'Barlow Condensed',sans-serif;display:flex;align-items:center;gap:6px;white-space:nowrap}
+.sync-dot{width:8px;height:8px;border-radius:50%;background:var(--muted)}
+.sync-dot.ok{background:var(--success)}
+.sync-dot.err{background:var(--danger)}
+.sync-dot.loading{background:var(--accent);animation:pulse 1s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.page{display:none;padding:20px 16px;max-width:960px;margin:0 auto}
+.page.active{display:block;animation:fadeIn .25s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:520px){.form-grid{grid-template-columns:1fr}}
+.field{display:flex;flex-direction:column;gap:5px}
+.field.full{grid-column:1/-1}
+.field label{font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+.field input,.field select,.field textarea{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:var(--text);font-family:'Barlow',sans-serif;font-size:15px;outline:none;transition:border-color .2s;width:100%}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--accent2)}
+.field input[readonly]{opacity:.6;cursor:not-allowed}
+.field select option{background:var(--card)}
+.field textarea{resize:vertical;min-height:60px}
+.hint{font-size:11px;color:var(--accent);margin-top:3px;font-family:'Barlow Condensed',sans-serif;min-height:14px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:16px}
+.card-title{font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:700;color:var(--accent);margin-bottom:16px}
+.section-label{font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;color:var(--accent2);text-transform:uppercase;letter-spacing:1px;margin:16px 0 10px;padding-bottom:6px;border-bottom:1px solid var(--border)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:11px 20px;border-radius:8px;border:none;cursor:pointer;font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:600;letter-spacing:.5px;transition:transform .15s}
+.btn:active{transform:scale(.97)}
+.btn-primary{background:var(--accent);color:#0f1923;width:100%;margin-top:10px;font-size:18px;padding:14px}
+.btn-danger{background:transparent;border:1px solid var(--danger);color:var(--danger);padding:6px 10px;font-size:13px;border-radius:6px;cursor:pointer}
+.btn-sm{padding:6px 12px;font-size:13px}
+.btn-export{background:var(--accent2);color:#fff}
+.table-wrap{overflow-x:auto;margin-top:8px}
+table{width:100%;border-collapse:collapse;font-size:12px;min-width:900px}
+th{font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;padding:8px;border-bottom:1px solid var(--border);text-align:left;white-space:nowrap}
+td{padding:8px;border-bottom:1px solid rgba(42,63,84,.5);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:rgba(59,158,255,.04)}
+.badge{display:inline-block;padding:2px 7px;border-radius:4px;font-size:11px;font-weight:600;font-family:'Barlow Condensed',sans-serif}
+.badge-maiz{background:rgba(245,166,35,.15);color:var(--accent)}
+.badge-soya{background:rgba(61,189,125,.15);color:var(--success)}
+.badge-otro{background:rgba(122,150,176,.15);color:var(--muted)}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-bottom:20px}
+.stat{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center}
+.stat-val{font-family:'Barlow Condensed',sans-serif;font-size:26px;font-weight:700;color:var(--accent)}
+.stat-lbl{font-size:11px;color:var(--muted);margin-top:2px}
+.empty{text-align:center;padding:40px 20px;color:var(--muted)}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--success);color:#fff;padding:12px 20px;border-radius:8px;font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:600;transition:transform .3s;z-index:999;pointer-events:none}
+.toast.show{transform:translateX(-50%) translateY(0)}
+.filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+.filters select,.filters input{background:var(--card);border:1px solid var(--border);border-radius:7px;padding:8px 10px;color:var(--text);font-size:13px;outline:none}
+.config-item{display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--border);font-size:13px}
+.config-item:last-child{border-bottom:none}
+.placa-tag{font-size:12px;color:var(--accent2);font-family:'Barlow Condensed',sans-serif;letter-spacing:1px;margin-left:8px}
+.ruta-tag{font-size:11px;color:var(--muted);display:block;margin-top:2px}
+.total-preview{background:rgba(61,189,125,.1);border:1px solid rgba(61,189,125,.25);border-radius:8px;padding:12px 16px;margin-top:4px;display:none}
+.total-preview.visible{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px}
+.tp-item{text-align:center}
+.tp-val{font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:700;color:var(--success)}
+.tp-lbl{font-size:11px;color:var(--muted)}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-brand">🚛 FLETES</div>
+  <div class="nav-tab active" onclick="showPage('registro',this)">Registrar</div>
+  <div class="nav-tab" onclick="showPage('viajes',this)">Viajes</div>
+  <div class="nav-tab" onclick="showPage('config',this)">Ajustes</div>
+  <div class="sync-status">
+    <div class="sync-dot loading" id="sync-dot"></div>
+    <span id="sync-txt" style="color:var(--muted)">Conectando...</span>
+  </div>
+</nav>
+
+<!-- REGISTRO -->
+<div class="page active" id="page-registro">
+  <div class="card">
+    <div class="card-title">+ Nuevo viaje</div>
+    <div class="form-grid">
+      <div class="field">
+        <label>Piloto</label>
+        <select id="f-piloto" onchange="mostrarPlaca()"><option value="">— Seleccionar —</option></select>
+        <div class="hint" id="placa-show"></div>
+      </div>
+      <div class="field">
+        <label>Fecha</label>
+        <input type="date" id="f-fecha"/>
+      </div>
+      <div class="field">
+        <label>Punto de carga</label>
+        <select id="f-carga" onchange="autoFillRuta()"><option value="">— Seleccionar —</option></select>
+      </div>
+      <div class="field">
+        <label>Punto de descarga</label>
+        <select id="f-descarga" onchange="autoFillRuta()"><option value="">— Seleccionar —</option></select>
+      </div>
+    </div>
+    <div class="total-preview" id="preview-ruta">
+      <div class="tp-item"><div class="tp-val" id="prev-piloto">—</div><div class="tp-lbl">Pago piloto</div></div>
+      <div class="tp-item"><div class="tp-val" id="prev-diesel">—</div><div class="tp-lbl">Cuota diesel (gal)</div></div>
+      <div class="tp-item"><div class="tp-val" id="prev-pxq">—</div><div class="tp-lbl">Precio/quintal</div></div>
+    </div>
+    <div class="section-label">Datos del viaje</div>
+    <div class="form-grid">
+      <div class="field">
+        <label>No. Boleta</label>
+        <input type="text" id="f-boleta" placeholder="Ej. 00123456"/>
+      </div>
+      <div class="field">
+        <label>Producto</label>
+        <select id="f-producto">
+          <option value="Maíz">Maíz</option>
+          <option value="Soya">Soya</option>
+          <option value="Otro">Otro</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Peso cargado (qq)</label>
+        <input type="number" id="f-peso" placeholder="0" min="0" step="0.001" oninput="calcTotal()"/>
+        <div class="hint" id="peso-hint"></div>
+      </div>
+      <div class="field">
+        <label>Precio por quintal (Q)</label>
+        <input type="number" id="f-pxq" placeholder="0.00" min="0" step="0.01" oninput="calcTotal()"/>
+      </div>
+    </div>
+    <div class="section-label">Combustible y pago</div>
+    <div class="form-grid">
+      <div class="field">
+        <label>Diesel consumido (galones)</label>
+        <input type="number" id="f-diesel" placeholder="0" min="0" step="0.5" oninput="calcTotal()"/>
+        <div class="hint" id="diesel-hint"></div>
+      </div>
+      <div class="field">
+        <label>Precio galón (Q)</label>
+        <input type="number" id="f-pgalon" placeholder="0.00" min="0" step="0.01" oninput="calcTotal()"/>
+      </div>
+      <div class="field">
+        <label>Pago al piloto (Q)</label>
+        <input type="number" id="f-pago-piloto" placeholder="0.00" min="0" step="0.01" oninput="calcTotal()"/>
+      </div>
+      <div class="field">
+        <label>Viáticos (Q)</label>
+        <input type="number" id="f-viaticos" placeholder="100" min="0" step="1" value="100" oninput="calcTotal()"/>
+      </div>
+    </div>
+    <div class="section-label">Resumen</div>
+    <div class="form-grid">
+      <div class="field"><label>Total flete (Q)</label><input type="number" id="f-total-flete" readonly/></div>
+      <div class="field"><label>Total diesel (Q)</label><input type="number" id="f-total-diesel" readonly/></div>
+      <div class="field"><label>Total costos (Q)</label><input type="number" id="f-total-costos" readonly/></div>
+      <div class="field"><label>Ganancia (Q)</label><input type="number" id="f-ganancia" readonly/></div>
+      <div class="field full"><label>Observaciones</label><textarea id="f-obs" placeholder="Opcional..."></textarea></div>
+    </div>
+    <button class="btn btn-primary" id="btn-guardar" onclick="guardarViaje()">✓ Guardar viaje</button>
+  </div>
+</div>
+
+<!-- VIAJES -->
+<div class="page" id="page-viajes">
+  <div class="stats" id="stats-bar"></div>
+  <div class="card">
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:14px">
+      <div class="card-title" style="margin:0">Viajes registrados</div>
+      <button class="btn btn-export btn-sm" onclick="exportarExcel()">⬇ Exportar Excel</button>
+    </div>
+    <div class="filters">
+      <select id="fil-piloto" onchange="renderTabla()"><option value="">Todos los pilotos</option></select>
+      <select id="fil-producto" onchange="renderTabla()">
+        <option value="">Todos los productos</option>
+        <option>Maíz</option><option>Soya</option><option>Otro</option>
+      </select>
+      <input type="date" id="fil-desde" onchange="renderTabla()" title="Desde" style="max-width:140px"/>
+      <input type="date" id="fil-hasta" onchange="renderTabla()" title="Hasta" style="max-width:140px"/>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th><th>Fecha</th><th>Piloto</th><th>Placa</th><th>Carga</th><th>Descarga</th>
+            <th>Boleta</th><th>Peso(qq)</th><th>Producto</th><th>P/qq</th>
+            <th>Total flete</th><th>Diesel(gal)</th><th>Total diesel</th><th>Pago piloto</th><th>Viáticos</th><th>Ganancia</th><th></th>
+          </tr>
+        </thead>
+        <tbody id="tabla-body"></tbody>
+      </table>
+    </div>
+    <div id="tabla-empty" class="empty" style="display:none"><p>No hay viajes registrados aún</p></div>
+  </div>
+</div>
+
+<!-- CONFIG -->
+<div class="page" id="page-config">
+  <div class="card">
+    <div class="card-title">👤 Pilotos y placas</div>
+    <div style="display:grid;grid-template-columns:1fr 120px;gap:8px;margin-bottom:8px">
+      <input type="text" id="nuevo-piloto" placeholder="Nombre completo" style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font-size:14px;outline:none"/>
+      <input type="text" id="nueva-placa" placeholder="Placa" style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font-size:14px;outline:none;text-transform:uppercase"/>
+    </div>
+    <button class="btn btn-sm" style="background:var(--accent);color:#0f1923;font-family:'Barlow Condensed',sans-serif;font-weight:700;margin-bottom:14px" onclick="agregarPiloto()">Agregar piloto</button>
+    <div id="lista-pilotos"></div>
+  </div>
+  <div class="card">
+    <div class="card-title">🛣 Rutas y tarifas</div>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:14px">Al seleccionar carga y descarga estos valores se cargan automáticamente. Editables a mano en el formulario.</p>
+    <div id="lista-rutas"></div>
+    <div class="section-label" style="margin-top:16px">Agregar / editar ruta</div>
+    <div class="form-grid">
+      <div class="field"><label>Carga</label><select id="r-carga"></select></div>
+      <div class="field"><label>Descarga</label><select id="r-descarga"></select></div>
+      <div class="field"><label>Pago piloto (Q)</label><input type="number" id="r-pago" placeholder="0" step="0.01"/></div>
+      <div class="field"><label>Cuota diesel (gal)</label><input type="number" id="r-diesel" placeholder="0" step="0.5"/></div>
+      <div class="field"><label>Precio/quintal (Q)</label><input type="number" id="r-pxq" placeholder="0" step="0.01"/></div>
+      <div class="field"><label>Peso fijo (qq) — 0 si varía</label><input type="number" id="r-pesofijo" placeholder="0" step="0.001"/></div>
+    </div>
+    <button class="btn btn-sm" style="background:var(--accent);color:#0f1923;font-family:'Barlow Condensed',sans-serif;font-weight:700;margin-top:8px" onclick="guardarRuta()">Guardar ruta</button>
+  </div>
+  <div class="card">
+    <div class="card-title">📍 Puntos de carga</div>
+    <div style="display:flex;gap:8px;margin-bottom:12px">
+      <input type="text" id="nuevo-carga" placeholder="Nombre" style="flex:1;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font-size:14px;outline:none"/>
+      <button class="btn btn-sm" style="background:var(--accent);color:#0f1923;font-family:'Barlow Condensed',sans-serif;font-weight:700" onclick="agregarCarga()">Agregar</button>
+    </div>
+    <div id="lista-cargas"></div>
+  </div>
+  <div class="card">
+    <div class="card-title">📍 Puntos de descarga</div>
+    <div style="display:flex;gap:8px;margin-bottom:12px">
+      <input type="text" id="nuevo-descarga" placeholder="Nombre" style="flex:1;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font-size:14px;outline:none"/>
+      <button class="btn btn-sm" style="background:var(--accent);color:#0f1923;font-family:'Barlow Condensed',sans-serif;font-weight:700" onclick="agregarDescarga()">Agregar</button>
+    </div>
+    <div id="lista-descargas"></div>
+  </div>
+  <div class="card">
+    <div class="card-title" style="color:var(--danger)">⚠ Zona de peligro</div>
+    <button class="btn btn-danger" onclick="borrarTodo()">Borrar todos los viajes</button>
+  </div>
+</div>
+
+<div class="toast" id="toast-el"></div>
+
+<!-- Funciones de UI disponibles inmediatamente, sin depender de Firebase -->
+<script>
+// showPage no necesita Firebase — solo muestra/oculta secciones
+window.showPage = function(p, tab) {
+  document.querySelectorAll('.page').forEach(x => x.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(x => x.classList.remove('active'));
+  document.getElementById('page-' + p).classList.add('active');
+  tab.classList.add('active');
+  if (p === 'viajes') { if(window._renderTabla) window._renderTabla(); if(window._renderStats) window._renderStats(); }
+  if (p === 'config') { if(window._renderConfig) window._renderConfig(); }
+};
+
+// Las demás funciones esperan a Firebase con una cola
+window._firebaseReady = false;
+window._pendingCalls = [];
+const _defer = (name) => function(...args) {
+  if (window._firebaseReady) { console.warn(name + ' llamado antes de estar listo'); return; }
+  window._pendingCalls.push({name, args});
+};
+window.mostrarPlaca  = _defer('mostrarPlaca');
+window.autoFillRuta  = _defer('autoFillRuta');
+window.calcTotal     = _defer('calcTotal');
+window.guardarViaje  = _defer('guardarViaje');
+window.borrarViaje   = _defer('borrarViaje');
+window.borrarTodo    = _defer('borrarTodo');
+window.exportarExcel = _defer('exportarExcel');
+window.agregarPiloto = _defer('agregarPiloto');
+window.quitarPiloto  = _defer('quitarPiloto');
+window.guardarRuta   = _defer('guardarRuta');
+window.borrarRuta    = _defer('borrarRuta');
+window.agregarCarga  = _defer('agregarCarga');
+window.quitarCarga   = _defer('quitarCarga');
+window.agregarDescarga = _defer('agregarDescarga');
+window.quitarDescarga  = _defer('quitarDescarga');
+</script>
+
+<!-- Firebase SDK -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getFirestore, collection, doc, addDoc, deleteDoc, onSnapshot, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBwWEArLnp7bAty0V9-0Y6UHvGAQZwwW3A",
+  authDomain: "fletes-gt.firebaseapp.com",
+  projectId: "fletes-gt",
+  storageBucket: "fletes-gt.firebasestorage.app",
+  messagingSenderId: "1073603008017",
+  appId: "1:1073603008017:web:0157c012e65775187e03b0"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+// ── Defaults ──────────────────────────────────────────────
+const PILOTOS_DEF=[
+  {nombre:"Francisco Javier Alvarez Dionicio",placa:"C967BYQ"},
+  {nombre:"Angel Manuel Arenales Herrera",placa:"C868CBB"},
+  {nombre:"Enmanuel Alexander Tzib Monterroso",placa:"C907BZW"},
+  {nombre:"Julio Esaú Alvarez Dionicio",placa:"C920BZK"},
+  {nombre:"Jose Lorenzo Hernandez Xajil",placa:"C602BVB"},
+  {nombre:"Cleybin Jamexon Tubac",placa:"C249BQY"},
+  {nombre:"Marlon Vasquez Gutierrez",placa:"C246BVT"},
+  {nombre:"Jeyson Estiven Par Flores",placa:"C364BYL"}
+];
+const CARGAS_DEF=["Puerto Barrios","KM100","Escuintla","ADM","Muelle PT. Barrios"];
+const DESCARGAS_DEF=["Nutriansa","El Cabro","El Cabro Original","Comayma","San Martin","San Isidro","Bodega PT. Barrios"];
+const RUTAS_DEF={
+  "Puerto Barrios||Nutriansa":             {pago:700,  diesel:105, pxq:12.25, pesofijo:0},
+  "ADM||San Isidro":                       {pago:250,  diesel:45,  pxq:7,     pesofijo:550.048},
+  "KM100||San Isidro":                     {pago:250,  diesel:45,  pxq:7,     pesofijo:550.048},
+  "Puerto Barrios||El Cabro":              {pago:600,  diesel:85,  pxq:10.67, pesofijo:0},
+  "Muelle PT. Barrios||Bodega PT. Barrios":{pago:100,  diesel:3.5, pxq:0.8,   pesofijo:0},
+  "Puerto Barrios||El Cabro Original":     {pago:600,  diesel:85,  pxq:13.75, pesofijo:0},
+  "Puerto Barrios||Comayma":               {pago:700,  diesel:100, pxq:300,   pesofijo:0},
+  "Escuintla||San Martin":                 {pago:200,  diesel:30,  pxq:6,     pesofijo:515},
+};
+
+// ── State ──────────────────────────────────────────────────
+let viajes = [];
+let config = { pilotos: PILOTOS_DEF, cargas: CARGAS_DEF, descargas: DESCARGAS_DEF, rutas: RUTAS_DEF };
+
+// ── Sync status ────────────────────────────────────────────
+function setSyncStatus(state, msg){
+  const dot=document.getElementById('sync-dot');
+  const txt=document.getElementById('sync-txt');
+  dot.className='sync-dot '+state;
+  txt.textContent=msg;
+  txt.style.color=state==='ok'?'var(--success)':state==='err'?'var(--danger)':'var(--muted)';
+}
+
+// ── Config in Firestore ────────────────────────────────────
+const configRef = doc(db,'config','main');
+
+async function loadConfig(){
+  try{
+    const snap = await getDoc(configRef);
+    if(snap.exists()){
+      config = {...config, ...snap.data()};
+    } else {
+      await setDoc(configRef, config);
+    }
+    populateSelects();
+  } catch(e){ console.error(e); }
+}
+
+async function saveConfig(){
+  try{ await setDoc(configRef, config); } catch(e){ console.error(e); }
+}
+
+// ── Viajes realtime listener ───────────────────────────────
+const viajesCol = collection(db,'viajes');
+
+onSnapshot(viajesCol, (snap)=>{
+  viajes = snap.docs.map(d=>({id:d.id,...d.data()}));
+  viajes.sort((a,b)=>b.fecha.localeCompare(a.fecha));
+  renderTabla();
+  renderStats();
+  setSyncStatus('ok','Sincronizado');
+}, (err)=>{
+  setSyncStatus('err','Sin conexión');
+  console.error(err);
+});
+
+// ── Config realtime listener ───────────────────────────────
+onSnapshot(configRef, (snap)=>{
+  if(snap.exists()){
+    config = snap.data();
+    populateSelects();
+    const pg=document.querySelector('.page.active');
+    if(pg&&pg.id==='page-config') renderConfig();
+  }
+});
+
+// ── Helpers ────────────────────────────────────────────────
+function toast(msg,ok=true){
+  const el=document.getElementById('toast-el');
+  el.textContent=msg;el.style.background=ok?'var(--success)':'var(--danger)';
+  el.classList.add('show');setTimeout(()=>el.classList.remove('show'),2500);
+}
+function Q(n){return 'Q'+(+n).toLocaleString('es-GT',{minimumFractionDigits:2,maximumFractionDigits:2});}
+function N(n){return (+n).toLocaleString('es-GT',{maximumFractionDigits:3});}
+
+// showPage ya está definido en el script principal arriba
+// Exponemos renderTabla/renderStats/renderConfig para que showPage pueda llamarlos
+window._renderTabla  = function(){ renderTabla(); };
+window._renderStats  = function(){ renderStats(); };
+window._renderConfig = function(){ renderConfig(); };
+window._firebaseReady = true;
+
+function populateSelects(){
+  const pilotos=config.pilotos||[];
+  const cargas=config.cargas||[];
+  const descargas=config.descargas||[];
+  ['f-piloto','fil-piloto'].forEach(id=>{
+    const sel=document.getElementById(id);if(!sel)return;
+    const val=sel.value;
+    sel.innerHTML=id==='fil-piloto'?'<option value="">Todos los pilotos</option>':'<option value="">— Seleccionar —</option>';
+    pilotos.forEach(p=>{const o=document.createElement('option');o.value=p.nombre;o.textContent=p.nombre;sel.appendChild(o);});
+    sel.value=val;
+  });
+  ['f-carga','r-carga'].forEach(id=>{
+    const sel=document.getElementById(id);if(!sel)return;
+    const val=sel.value;sel.innerHTML='<option value="">— Seleccionar —</option>';
+    cargas.forEach(d=>{const o=document.createElement('option');o.value=o.textContent=d;sel.appendChild(o);});
+    sel.value=val;
+  });
+  ['f-descarga','r-descarga'].forEach(id=>{
+    const sel=document.getElementById(id);if(!sel)return;
+    const val=sel.value;sel.innerHTML='<option value="">— Seleccionar —</option>';
+    descargas.forEach(d=>{const o=document.createElement('option');o.value=o.textContent=d;sel.appendChild(o);});
+    sel.value=val;
+  });
+}
+
+window.mostrarPlaca=function(){
+  const n=document.getElementById('f-piloto').value;
+  const p=(config.pilotos||[]).find(x=>x.nombre===n);
+  document.getElementById('placa-show').textContent=p?'Placa: '+p.placa:'';
+}
+
+window.autoFillRuta=function(){
+  const c=document.getElementById('f-carga').value;
+  const d=document.getElementById('f-descarga').value;
+  const rutas=config.rutas||{};
+  const r=rutas[c+'||'+d];
+  const prev=document.getElementById('preview-ruta');
+  if(r){
+    document.getElementById('f-pago-piloto').value=r.pago;
+    document.getElementById('f-diesel').value=r.diesel;
+    document.getElementById('f-pxq').value=r.pxq;
+    document.getElementById('diesel-hint').textContent='Cuota ruta: '+r.diesel+' gal — editable si varió';
+    if(r.pesofijo>0){
+      document.getElementById('f-peso').value=r.pesofijo;
+      document.getElementById('peso-hint').textContent='Peso fijo: '+r.pesofijo+' qq';
+    } else {
+      document.getElementById('f-peso').value='';
+      document.getElementById('peso-hint').textContent='';
+    }
+    document.getElementById('prev-piloto').textContent=Q(r.pago);
+    document.getElementById('prev-diesel').textContent=r.diesel;
+    document.getElementById('prev-pxq').textContent=Q(r.pxq);
+    prev.classList.add('visible');
+    calcTotal();
+  } else {
+    prev.classList.remove('visible');
+    document.getElementById('diesel-hint').textContent='';
+    document.getElementById('peso-hint').textContent='';
+  }
+}
+
+window.calcTotal=function(){
+  const peso=parseFloat(document.getElementById('f-peso').value)||0;
+  const pxq=parseFloat(document.getElementById('f-pxq').value)||0;
+  const diesel=parseFloat(document.getElementById('f-diesel').value)||0;
+  const pgalon=parseFloat(document.getElementById('f-pgalon').value)||0;
+  const pagoPiloto=parseFloat(document.getElementById('f-pago-piloto').value)||0;
+  const viaticos=parseFloat(document.getElementById('f-viaticos').value)||0;
+  const totalFlete=peso*pxq;
+  const totalDiesel=diesel*pgalon;
+  const totalCostos=pagoPiloto+totalDiesel+viaticos;
+  document.getElementById('f-total-flete').value=totalFlete.toFixed(2);
+  document.getElementById('f-total-diesel').value=totalDiesel.toFixed(2);
+  document.getElementById('f-total-costos').value=totalCostos.toFixed(2);
+  document.getElementById('f-ganancia').value=(totalFlete-totalCostos).toFixed(2);
+}
+
+window.guardarViaje=async function(){
+  const piloto=document.getElementById('f-piloto').value;
+  const fecha=document.getElementById('f-fecha').value;
+  const carga=document.getElementById('f-carga').value;
+  const descarga=document.getElementById('f-descarga').value;
+  const boleta=document.getElementById('f-boleta').value.trim();
+  if(!piloto||!fecha||!carga||!descarga||!boleta){toast('Completa los campos obligatorios',false);return;}
+  const btn=document.getElementById('btn-guardar');
+  btn.disabled=true;btn.textContent='Guardando...';
+  const p=(config.pilotos||[]).find(x=>x.nombre===piloto);
+  const peso=parseFloat(document.getElementById('f-peso').value)||0;
+  const pxq=parseFloat(document.getElementById('f-pxq').value)||0;
+  const diesel=parseFloat(document.getElementById('f-diesel').value)||0;
+  const pgalon=parseFloat(document.getElementById('f-pgalon').value)||0;
+  const pagoPiloto=parseFloat(document.getElementById('f-pago-piloto').value)||0;
+  const viaticos=parseFloat(document.getElementById('f-viaticos').value)||100;
+  const totalFlete=peso*pxq;
+  const totalDiesel=diesel*pgalon;
+  const totalCostos=pagoPiloto+totalDiesel+viaticos;
+  try{
+    await addDoc(viajesCol,{
+      piloto,placa:p?p.placa:'',fecha,carga,descarga,boleta,
+      peso,producto:document.getElementById('f-producto').value,
+      pxq,totalFlete,diesel,pgalon,totalDiesel,
+      pagoPiloto,viaticos,totalCostos,
+      ganancia:totalFlete-totalCostos,
+      obs:document.getElementById('f-obs').value.trim(),
+      ts: Date.now()
+    });
+    toast('Viaje guardado y sincronizado ✓');
+    ['f-boleta','f-peso','f-pxq','f-diesel','f-pgalon','f-pago-piloto','f-obs','f-total-flete','f-total-diesel','f-total-costos','f-ganancia'].forEach(id=>document.getElementById(id).value='');
+    document.getElementById('f-viaticos').value=100;
+    document.getElementById('f-piloto').value='';
+    document.getElementById('f-carga').value='';
+    document.getElementById('f-descarga').value='';
+    document.getElementById('placa-show').textContent='';
+    document.getElementById('peso-hint').textContent='';
+    document.getElementById('diesel-hint').textContent='';
+    document.getElementById('preview-ruta').classList.remove('visible');
+  } catch(e){ toast('Error al guardar: '+e.message,false); }
+  btn.disabled=false;btn.textContent='✓ Guardar viaje';
+}
+
+window.borrarViaje=async function(id){
+  if(!confirm('¿Borrar este viaje?'))return;
+  try{ await deleteDoc(doc(db,'viajes',id)); toast('Viaje eliminado',false); }
+  catch(e){ toast('Error: '+e.message,false); }
+}
+
+window.borrarTodo=async function(){
+  if(!confirm('¿Borrar TODOS los viajes? No se puede deshacer.'))return;
+  try{
+    await Promise.all(viajes.map(v=>deleteDoc(doc(db,'viajes',v.id))));
+    toast('Todos los viajes eliminados',false);
+  } catch(e){ toast('Error: '+e.message,false); }
+}
+
+function renderTabla(){
+  const fp=document.getElementById('fil-piloto').value;
+  const fprod=document.getElementById('fil-producto').value;
+  const fmes=document.getElementById('fil-mes').value;
+  let data=viajes.filter(v=>{
+    if(fp&&v.piloto!==fp)return false;
+    if(fprod&&v.producto!==fprod)return false;
+    if(fmes&&!v.fecha.startsWith(fmes))return false;
+    return true;
+  });
+  const tbody=document.getElementById('tabla-body');
+  const empty=document.getElementById('tabla-empty');
+  if(!data.length){tbody.innerHTML='';empty.style.display='block';return;}
+  empty.style.display='none';
+  tbody.innerHTML=data.map((v,i)=>`<tr>
+    <td style="color:var(--muted)">${data.length-i}</td>
+    <td style="white-space:nowrap">${v.fecha}</td>
+    <td style="font-size:11px">${v.piloto}</td>
+    <td style="font-family:monospace;color:var(--accent);font-size:11px">${v.placa||''}</td>
+    <td style="font-size:11px">${v.carga}</td>
+    <td style="font-size:11px">${v.descarga}</td>
+    <td style="font-family:monospace;color:var(--accent2);font-size:11px">${v.boleta}</td>
+    <td>${N(v.peso)}</td>
+    <td><span class="badge badge-${v.producto==='Maíz'?'maiz':v.producto==='Soya'?'soya':'otro'}">${v.producto}</span></td>
+    <td>${Q(v.pxq||0)}</td>
+    <td style="color:var(--success);font-weight:600">${Q(v.totalFlete||0)}</td>
+    <td>${N(v.diesel||0)}</td>
+    <td>${Q(v.totalDiesel||0)}</td>
+    <td>${Q(v.pagoPiloto||0)}</td>
+    <td>${Q(v.viaticos||0)}</td>
+    <td style="font-weight:600;color:${(v.ganancia||0)>=0?'var(--success)':'var(--danger)'}">${Q(v.ganancia||0)}</td>
+    <td><button class="btn btn-danger" onclick="borrarViaje('${v.id}')">✕</button></td>
+  </tr>`).join('');
+}
+
+function renderStats(){
+  const hoy=new Date().toISOString().slice(0,7);
+  const mes=viajes.filter(v=>v.fecha&&v.fecha.startsWith(hoy));
+  const totalFlete=mes.reduce((s,v)=>s+(+v.totalFlete||0),0);
+  const totalGanancia=mes.reduce((s,v)=>s+(+v.ganancia||0),0);
+  document.getElementById('stats-bar').innerHTML=`
+    <div class="stat"><div class="stat-val">${viajes.length}</div><div class="stat-lbl">Viajes totales</div></div>
+    <div class="stat"><div class="stat-val">${mes.length}</div><div class="stat-lbl">Este mes</div></div>
+    <div class="stat"><div class="stat-val">Q${Math.round(totalFlete).toLocaleString('es-GT')}</div><div class="stat-lbl">Flete este mes</div></div>
+    <div class="stat"><div class="stat-val">Q${Math.round(totalGanancia).toLocaleString('es-GT')}</div><div class="stat-lbl">Ganancia este mes</div></div>
+    <div class="stat"><div class="stat-val">${[...new Set(mes.map(v=>v.piloto))].length}</div><div class="stat-lbl">Pilotos activos</div></div>
+  `;
+}
+
+window.exportarExcel=function(){
+  const desde=document.getElementById('fil-desde').value;
+  const hasta=document.getElementById('fil-hasta').value;
+  const fp=document.getElementById('fil-piloto').value;
+  const fprod=document.getElementById('fil-producto').value;
+  let data=[...viajes].filter(v=>{
+    if(fp&&v.piloto!==fp)return false;
+    if(fprod&&v.producto!==fprod)return false;
+    if(desde&&v.fecha<desde)return false;
+    if(hasta&&v.fecha>hasta)return false;
+    return true;
+  }).sort((a,b)=>a.fecha.localeCompare(b.fecha));
+  if(!data.length){toast('Sin datos para exportar',false);return;}
+
+  // Título con rango de fechas
+  const fmtFecha=f=>{const[y,m,d]=f.split('-');const ms=['ENERO','FEBRERO','MARZO','ABRIL','MAYO','JUNIO','JULIO','AGOSTO','SEPTIEMBRE','OCTUBRE','NOVIEMBRE','DICIEMBRE'];return d+' DE '+ms[+m-1]+' DEL '+y;};
+  const fechas=data.map(v=>v.fecha).sort();
+  const titulo = desde&&hasta
+    ? 'VIAJES DEL '+fmtFecha(desde)+' AL '+fmtFecha(hasta)
+    : 'VIAJES DEL '+fmtFecha(fechas[0])+' AL '+fmtFecha(fechas[fechas.length-1]);
+
+  // Cargar SheetJS
+  const script=document.createElement('script');
+  script.src='https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+  script.onload=()=>_generarXLSX(data, titulo);
+  document.head.appendChild(script);
+  toast('Preparando Excel...');
+}
+
+function _generarXLSX(data, titulo){
+  const XLSX=window.XLSX;
+  const wb=XLSX.utils.book_new();
+
+  const headers=['NO.','FECHA','NOMBRE','PLACA','CARGA','DESCARGA','BOLETA',
+    'QQ','PRECIO QQ','PRECIO FLETE','DIESEL','PRECIO DIESEL','TOTAL Q',
+    'VIÁTICOS','PRODUCTO','PRECIO CHOFER','GANANCIA','OBSERVACIÓN'];
+
+  const fmtFechaCorta=f=>{const[y,m,d]=f.split('-');return d+'/'+m+'/'+y;};
+
+  const rows=data.map((v,i)=>[
+    i+1,
+    fmtFechaCorta(v.fecha),
+    (v.piloto||'').split(' ')[0].toUpperCase(),
+    v.placa||'',
+    v.carga||'',
+    v.descarga||'',
+    v.boleta||'',
+    +(+v.peso||0).toFixed(3),
+    +(+v.pxq||0),
+    +(+v.totalFlete||0).toFixed(2),
+    +(+v.diesel||0),
+    +(+v.pgalon||0),
+    +(+v.totalDiesel||0).toFixed(2),
+    +(+v.viaticos||0),
+    (v.producto||'').toUpperCase(),
+    +(+v.pagoPiloto||0),
+    +(+v.ganancia||0).toFixed(2),
+    v.obs||''
+  ]);
+
+  // Totales
+  const sumCol=(col)=>data.reduce((s,v)=>{
+    const vals=[null,null,null,null,null,null,null,v.peso,v.pxq,v.totalFlete,v.diesel,v.pgalon,v.totalDiesel,v.viaticos,null,v.pagoPiloto,v.ganancia,null];
+    return s+(+vals[col]||0);
+  },0);
+  const totales=['TOTALES','','','','','','','',
+    '',+sumCol(9).toFixed(2),+sumCol(10).toFixed(3),+sumCol(11).toFixed(2),
+    +sumCol(12).toFixed(2),+sumCol(13).toFixed(2),'',+sumCol(15).toFixed(2),
+    +sumCol(16).toFixed(2),''];
+
+  const wsData=[[titulo], headers, ...rows, totales];
+  const ws=XLSX.utils.aoa_to_sheet(wsData);
+
+  // Merge título
+  ws['!merges']=[{s:{r:0,c:0},e:{r:0,c:17}}];
+
+  // Anchos de columna
+  ws['!cols']=[{wch:5},{wch:12},{wch:14},{wch:10},{wch:10},{wch:12},{wch:10},
+    {wch:9},{wch:9},{wch:12},{wch:8},{wch:12},{wch:12},{wch:9},{wch:16},{wch:12},{wch:12},{wch:18}];
+
+  XLSX.utils.book_append_sheet(wb, ws, 'Viajes');
+
+  const desde=document.getElementById('fil-desde').value||new Date().toISOString().slice(0,10);
+  const hasta=document.getElementById('fil-hasta').value||new Date().toISOString().slice(0,10);
+  XLSX.writeFile(wb,'reporte_viajes_'+desde+'_'+hasta+'.xlsx');
+  toast('Excel exportado ✓');
+}
+
+// ── Config functions ────────────────────────────────────────
+function renderConfig(){
+  const pilotos=config.pilotos||[];
+  const cargas=config.cargas||[];
+  const descargas=config.descargas||[];
+  const rutas=config.rutas||{};
+  document.getElementById('lista-pilotos').innerHTML=pilotos.map((p,i)=>`
+    <div class="config-item"><span>${p.nombre}<span class="placa-tag">${p.placa}</span></span>
+    <button class="btn btn-danger btn-sm" onclick="quitarPiloto(${i})">✕</button></div>`).join('');
+  document.getElementById('lista-rutas').innerHTML=Object.entries(rutas).map(([k,r])=>{
+    const [c,d]=k.split('||');
+    return `<div class="config-item" style="flex-direction:column;align-items:flex-start;gap:4px">
+      <div style="display:flex;justify-content:space-between;width:100%;align-items:center">
+        <strong style="font-size:13px">${c} → ${d}</strong>
+        <button class="btn btn-danger btn-sm" onclick="borrarRuta('${k.replace(/'/g,"\\'")}')">✕</button>
+      </div>
+      <span class="ruta-tag">Piloto: Q${r.pago} · Diesel: ${r.diesel} gal · Q/qq: Q${r.pxq}${r.pesofijo>0?' · Peso fijo: '+r.pesofijo+' qq':''}</span>
+    </div>`;
+  }).join('');
+  document.getElementById('lista-cargas').innerHTML=cargas.map((d,i)=>`
+    <div class="config-item"><span>${d}</span><button class="btn btn-danger btn-sm" onclick="quitarCarga(${i})">✕</button></div>`).join('');
+  document.getElementById('lista-descargas').innerHTML=descargas.map((d,i)=>`
+    <div class="config-item"><span>${d}</span><button class="btn btn-danger btn-sm" onclick="quitarDescarga(${i})">✕</button></div>`).join('');
+  populateSelects();
+}
+
+window.agregarPiloto=async function(){
+  const n=document.getElementById('nuevo-piloto').value.trim();
+  const pl=document.getElementById('nueva-placa').value.trim().toUpperCase();
+  if(!n||!pl){toast('Nombre y placa requeridos',false);return;}
+  if((config.pilotos||[]).find(p=>p.nombre===n)){toast('Ya existe',false);return;}
+  config.pilotos=[...(config.pilotos||[]),{nombre:n,placa:pl}];
+  await saveConfig();
+  document.getElementById('nuevo-piloto').value='';document.getElementById('nueva-placa').value='';
+  toast('Piloto agregado');
+}
+window.quitarPiloto=async function(i){
+  config.pilotos=(config.pilotos||[]).filter((_,j)=>j!==i);
+  await saveConfig();renderConfig();
+}
+window.guardarRuta=async function(){
+  const c=document.getElementById('r-carga').value;
+  const d=document.getElementById('r-descarga').value;
+  if(!c||!d){toast('Selecciona carga y descarga',false);return;}
+  config.rutas={...(config.rutas||{}),[c+'||'+d]:{
+    pago:parseFloat(document.getElementById('r-pago').value)||0,
+    diesel:parseFloat(document.getElementById('r-diesel').value)||0,
+    pxq:parseFloat(document.getElementById('r-pxq').value)||0,
+    pesofijo:parseFloat(document.getElementById('r-pesofijo').value)||0
+  }};
+  await saveConfig();toast('Ruta guardada');
+}
+window.borrarRuta=async function(k){
+  if(!confirm('¿Borrar esta ruta?'))return;
+  delete config.rutas[k];await saveConfig();toast('Ruta eliminada',false);
+}
+window.agregarCarga=async function(){
+  const v=document.getElementById('nuevo-carga').value.trim();
+  if(!v)return;
+  if((config.cargas||[]).includes(v)){toast('Ya existe',false);return;}
+  config.cargas=[...(config.cargas||[]),v];await saveConfig();
+  document.getElementById('nuevo-carga').value='';toast('Punto de carga agregado');
+}
+window.quitarCarga=async function(i){
+  config.cargas=(config.cargas||[]).filter((_,j)=>j!==i);await saveConfig();renderConfig();
+}
+window.agregarDescarga=async function(){
+  const v=document.getElementById('nuevo-descarga').value.trim();
+  if(!v)return;
+  if((config.descargas||[]).includes(v)){toast('Ya existe',false);return;}
+  config.descargas=[...(config.descargas||[]),v];await saveConfig();
+  document.getElementById('nuevo-descarga').value='';toast('Punto de descarga agregado');
+}
+window.quitarDescarga=async function(i){
+  config.descargas=(config.descargas||[]).filter((_,j)=>j!==i);await saveConfig();renderConfig();
+}
+
+// ── Init ───────────────────────────────────────────────────
+document.getElementById('f-fecha').value=new Date().toISOString().slice(0,10);
+const hoyStr=new Date().toISOString().slice(0,10);
+const primerDia=hoyStr.slice(0,7)+'-01';
+document.getElementById('fil-desde').value=primerDia;
+document.getElementById('fil-hasta').value=hoyStr;
+setSyncStatus('loading','Conectando...');
+
+// Cargar selects con datos por defecto INMEDIATAMENTE, sin esperar a Firebase
+// Así los selects funcionan aunque Firebase tarde en responder
+populateSelects();
+
+// Luego Firebase sobreescribe con los datos guardados en la nube
+loadConfig();
+
+const mf={name:"Control de Viajes",short_name:"Viajes",start_url:".",display:"standalone",background_color:"#0f1923",theme_color:"#0f1923",icons:[{src:"https://placehold.co/192x192/f5a623/0f1923?text=V",sizes:"192x192",type:"image/png"},{src:"https://placehold.co/512x512/f5a623/0f1923?text=V",sizes:"512x512",type:"image/png"}]};
+document.getElementById('mf').href=URL.createObjectURL(new Blob([JSON.stringify(mf)],{type:'application/json'}));
+
+</script>
+</body>
+</html>
