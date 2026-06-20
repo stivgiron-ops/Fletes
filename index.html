@@ -83,6 +83,7 @@ tr:hover td{background:rgba(59,158,255,.04)}
   <div class="nav-tab active" onclick="showPage('registro',this)">Registrar</div>
   <div class="nav-tab" onclick="showPage('viajes',this)">Viajes</div>
   <div class="nav-tab" onclick="showPage('config',this)">Ajustes</div>
+  <div class="nav-tab" onclick="showPage('impuestos',this)">Impuestos</div>
   <div class="sync-status">
     <div class="sync-dot loading" id="sync-dot"></div>
     <span id="sync-txt" style="color:var(--muted)">Conectando...</span>
@@ -254,6 +255,36 @@ tr:hover td{background:rgba(59,158,255,.04)}
   </div>
 </div>
 
+<!-- IMPUESTOS -->
+<div class="page" id="page-impuestos">
+  <div class="card">
+    <div class="card-title">🧾 Cálculo de impuestos</div>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:14px">
+      Calculado sobre el total de fletes cobrados (con IVA incluido) de los viajes registrados en el periodo.
+      Fórmulas: Base sin IVA = Total/1.12 · IVA = Total−Base · ISR = Base×8%×25% · ISO = (Base/4)×1%.
+    </p>
+    <div class="filters">
+      <select id="imp-periodo" onchange="cambiarPeriodoImpuestos()">
+        <option value="mes">Mensual</option>
+        <option value="trimestre">Trimestral</option>
+        <option value="custom">Personalizado</option>
+      </select>
+      <select id="imp-mes"></select>
+      <select id="imp-trimestre" style="display:none">
+        <option value="1">Trim. 1 (Ene-Mar)</option>
+        <option value="2">Trim. 2 (Abr-Jun)</option>
+        <option value="3">Trim. 3 (Jul-Sep)</option>
+        <option value="4">Trim. 4 (Oct-Dic)</option>
+      </select>
+      <select id="imp-anio"></select>
+      <input type="date" id="imp-desde" style="display:none" title="Desde"/>
+      <input type="date" id="imp-hasta" style="display:none" title="Hasta"/>
+    </div>
+    <button class="btn btn-primary" onclick="calcularImpuestos()">Calcular impuestos</button>
+  </div>
+  <div class="card" id="imp-resultado" style="display:none"></div>
+</div>
+
 <div class="toast" id="toast-el"></div>
 
 <!-- Funciones de UI disponibles inmediatamente, sin depender de Firebase -->
@@ -266,6 +297,7 @@ window.showPage = function(p, tab) {
   tab.classList.add('active');
   if (p === 'viajes') { if(window._renderTabla) window._renderTabla(); if(window._renderStats) window._renderStats(); }
   if (p === 'config') { if(window._renderConfig) window._renderConfig(); }
+  if (p === 'impuestos') { if(window._renderImpuestos) window._renderImpuestos(); }
 };
 
 // Las demás funciones esperan a Firebase con una cola
@@ -290,6 +322,8 @@ window.agregarCarga  = _defer('agregarCarga');
 window.quitarCarga   = _defer('quitarCarga');
 window.agregarDescarga = _defer('agregarDescarga');
 window.quitarDescarga  = _defer('quitarDescarga');
+window.cambiarPeriodoImpuestos = _defer('cambiarPeriodoImpuestos');
+window.calcularImpuestos = _defer('calcularImpuestos');
 </script>
 
 <!-- Firebase SDK -->
@@ -542,11 +576,13 @@ window.borrarTodo=async function(){
 function renderTabla(){
   const fp=document.getElementById('fil-piloto').value;
   const fprod=document.getElementById('fil-producto').value;
-  const fmes=document.getElementById('fil-mes').value;
+  const fdesde=document.getElementById('fil-desde').value;
+  const fhasta=document.getElementById('fil-hasta').value;
   let data=viajes.filter(v=>{
     if(fp&&v.piloto!==fp)return false;
     if(fprod&&v.producto!==fprod)return false;
-    if(fmes&&!v.fecha.startsWith(fmes))return false;
+    if(fdesde&&v.fecha<fdesde)return false;
+    if(fhasta&&v.fecha>fhasta)return false;
     return true;
   });
   const tbody=document.getElementById('tabla-body');
@@ -751,6 +787,127 @@ window.agregarDescarga=async function(){
 }
 window.quitarDescarga=async function(i){
   config.descargas=(config.descargas||[]).filter((_,j)=>j!==i);await saveConfig();renderConfig();
+}
+
+// ── Impuestos ────────────────────────────────────────────────
+window._renderImpuestos=function(){
+  const selAnio=document.getElementById('imp-anio');
+  if(selAnio && !selAnio.options.length){
+    const anioActual=new Date().getFullYear();
+    for(let y=anioActual-2;y<=anioActual+1;y++){
+      const o=document.createElement('option');o.value=y;o.textContent=y;
+      if(y===anioActual)o.selected=true;
+      selAnio.appendChild(o);
+    }
+  }
+  const selMes=document.getElementById('imp-mes');
+  if(selMes && !selMes.options.length){
+    const meses=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+    meses.forEach((m,i)=>{
+      const o=document.createElement('option');
+      o.value=String(i+1).padStart(2,'0');o.textContent=m;
+      if(i===new Date().getMonth())o.selected=true;
+      selMes.appendChild(o);
+    });
+  }
+}
+
+window.cambiarPeriodoImpuestos=function(){
+  const t=document.getElementById('imp-periodo').value;
+  document.getElementById('imp-mes').style.display=t==='mes'?'':'none';
+  document.getElementById('imp-trimestre').style.display=t==='trimestre'?'':'none';
+  document.getElementById('imp-desde').style.display=t==='custom'?'':'none';
+  document.getElementById('imp-hasta').style.display=t==='custom'?'':'none';
+}
+
+window.calcularImpuestos=function(){
+  const t=document.getElementById('imp-periodo').value;
+  const anio=document.getElementById('imp-anio').value||new Date().getFullYear();
+  let desde,hasta,etiqueta;
+  const meses=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+
+  if(t==='mes'){
+    const m=document.getElementById('imp-mes').value||'01';
+    desde=anio+'-'+m+'-01';
+    const ultimoDia=new Date(+anio,+m,0).getDate();
+    hasta=anio+'-'+m+'-'+String(ultimoDia).padStart(2,'0');
+    etiqueta=meses[+m-1]+' '+anio;
+  } else if(t==='trimestre'){
+    const q=+document.getElementById('imp-trimestre').value;
+    const mIni=(q-1)*3+1, mFin=q*3;
+    desde=anio+'-'+String(mIni).padStart(2,'0')+'-01';
+    const ultimoDia=new Date(+anio,mFin,0).getDate();
+    hasta=anio+'-'+String(mFin).padStart(2,'0')+'-'+String(ultimoDia).padStart(2,'0');
+    etiqueta='Trimestre '+q+' ('+meses[mIni-1]+'-'+meses[mFin-1]+') '+anio;
+  } else {
+    desde=document.getElementById('imp-desde').value;
+    hasta=document.getElementById('imp-hasta').value;
+    if(!desde||!hasta){toast('Selecciona ambas fechas',false);return;}
+    etiqueta=desde+' al '+hasta;
+  }
+
+  const data=viajes.filter(v=>v.fecha>=desde&&v.fecha<=hasta);
+  const ingresoBruto=data.reduce((s,v)=>s+(+v.totalFlete||0),0);
+  const base=ingresoBruto/1.12;
+  const iva=ingresoBruto-base;
+  const isr=base*0.08*0.25;
+  const iso=(base/4)*0.01;
+  const totalImpuestos=iva+isr+iso;
+  const neto=ingresoBruto-totalImpuestos;
+
+  const res=document.getElementById('imp-resultado');
+  res.style.display='block';
+
+  const filasViajes=data.map(v=>{
+    const tf=+v.totalFlete||0;
+    const b=tf/1.12;
+    const ivaV=tf-b;
+    const isrV=b*0.08*0.25;
+    const isoV=(b/4)*0.01;
+    return {v,tf,b,ivaV,isrV,isoV};
+  }).sort((a,b2)=>a.v.fecha.localeCompare(b2.v.fecha));
+
+  const filasHtml=filasViajes.length? filasViajes.map(f=>`
+    <tr>
+      <td style="white-space:nowrap">${f.v.fecha}</td>
+      <td style="font-size:11px">${f.v.piloto||''}</td>
+      <td style="font-family:monospace;color:var(--accent2);font-size:11px">${f.v.boleta||''}</td>
+      <td>${Q(f.tf)}</td>
+      <td>${Q(f.b)}</td>
+      <td>${Q(f.ivaV)}</td>
+      <td>${Q(f.isrV)}</td>
+      <td>${Q(f.isoV)}</td>
+      <td style="font-weight:600;color:var(--danger)">${Q(f.ivaV+f.isrV+f.isoV)}</td>
+    </tr>`).join('')
+    : `<tr><td colspan="9" style="text-align:center;color:var(--muted)">Sin viajes en este periodo</td></tr>`;
+
+  res.innerHTML=`
+    <div class="card-title">Resultado — ${etiqueta}</div>
+    <div class="stats">
+      <div class="stat"><div class="stat-val">${data.length}</div><div class="stat-lbl">Viajes en el periodo</div></div>
+      <div class="stat"><div class="stat-val" style="font-size:18px">${Q(ingresoBruto)}</div><div class="stat-lbl">Ingreso bruto (con IVA)</div></div>
+      <div class="stat"><div class="stat-val" style="font-size:18px">${Q(base)}</div><div class="stat-lbl">Base imponible (sin IVA)</div></div>
+    </div>
+    <div class="section-label">Impuestos a pagar — Total del periodo</div>
+    <div class="config-item"><span>IVA (débito fiscal)</span><strong style="color:var(--accent2)">${Q(iva)}</strong></div>
+    <div class="config-item"><span>ISR (Base × 8% × 25%)</span><strong style="color:var(--accent2)">${Q(isr)}</strong></div>
+    <div class="config-item"><span>ISO (Base/4 × 1%)${t==='mes'?' <span style="color:var(--muted);font-size:11px">— recuerda que el ISO se declara trimestral, no mensual</span>':''}</span><strong style="color:var(--accent2)">${Q(iso)}</strong></div>
+    <div class="config-item" style="border-top:2px solid var(--border);margin-top:8px;padding-top:12px">
+      <span style="font-weight:700">Total impuestos</span><strong style="color:var(--danger);font-size:18px">${Q(totalImpuestos)}</strong>
+    </div>
+    <div class="config-item">
+      <span style="font-weight:700">Neto después de impuestos</span><strong style="color:var(--success);font-size:18px">${Q(neto)}</strong>
+    </div>
+    <div class="section-label">Desglose por viaje</div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Fecha</th><th>Piloto</th><th>Boleta</th><th>Total flete</th><th>Base s/IVA</th><th>IVA</th><th>ISR</th><th>ISO</th><th>Total imp.</th></tr>
+        </thead>
+        <tbody>${filasHtml}</tbody>
+      </table>
+    </div>
+  `;
 }
 
 // ── Init ───────────────────────────────────────────────────
