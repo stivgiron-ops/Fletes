@@ -196,8 +196,9 @@ tr:hover td{background:rgba(59,158,255,.04)}
         <thead>
           <tr>
             <th>#</th><th>Fecha</th><th>Piloto</th><th>Placa</th><th>Carga</th><th>Descarga</th>
-            <th>Boleta</th><th>Peso(qq)</th><th>Producto</th><th>P/qq</th>
-            <th>Total flete</th><th>Diesel(gal)</th><th>Total diesel</th><th>Pago piloto</th><th>Viáticos</th><th>Ganancia</th><th></th>
+            <th>Boleta</th><th>Peso(qq)</th><th>P/qq</th><th>Total flete</th>
+            <th>Diesel(gal)</th><th>Precio diesel</th><th>Total diesel</th><th>Viáticos</th>
+            <th>Producto</th><th>Pago piloto</th><th>Ganancia</th><th>Observaciones</th><th></th>
           </tr>
         </thead>
         <tbody id="tabla-body"></tbody>
@@ -598,14 +599,16 @@ function renderTabla(){
     <td style="font-size:11px">${v.descarga}</td>
     <td style="font-family:monospace;color:var(--accent2);font-size:11px">${v.boleta}</td>
     <td>${N(v.peso)}</td>
-    <td><span class="badge badge-${v.producto==='Maíz'?'maiz':v.producto==='Soya'?'soya':'otro'}">${v.producto}</span></td>
     <td>${Q(v.pxq||0)}</td>
     <td style="color:var(--success);font-weight:600">${Q(v.totalFlete||0)}</td>
     <td>${N(v.diesel||0)}</td>
+    <td>${Q(v.pgalon||0)}</td>
     <td>${Q(v.totalDiesel||0)}</td>
-    <td>${Q(v.pagoPiloto||0)}</td>
     <td>${Q(v.viaticos||0)}</td>
+    <td><span class="badge badge-${v.producto==='Maíz'?'maiz':v.producto==='Soya'?'soya':'otro'}">${v.producto}</span></td>
+    <td>${Q(v.pagoPiloto||0)}</td>
     <td style="font-weight:600;color:${(v.ganancia||0)>=0?'var(--success)':'var(--danger)'}">${Q(v.ganancia||0)}</td>
+    <td style="font-size:11px;color:var(--muted);max-width:160px">${v.obs||''}</td>
     <td><button class="btn btn-danger" onclick="borrarViaje('${v.id}')">✕</button></td>
   </tr>`).join('');
 }
