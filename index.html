@@ -254,6 +254,32 @@ tr:hover td{background:rgba(59,158,255,.04)}
     <div class="card-title" style="color:var(--danger)">⚠ Zona de peligro</div>
     <button class="btn btn-danger" onclick="borrarTodo()">Borrar todos los viajes</button>
   </div>
+
+  <div class="card">
+    <div class="card-title">ℹ️ Acerca de FLETES</div>
+    <p style="font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:10px">
+      <strong>FLETES</strong> es una app web (PWA) hecha a la medida para administrar el negocio de transporte
+      de Transportes Ruano Alvarado: viajes, pilotos, rutas, combustible, impuestos y reportes — todo en un
+      solo archivo (<code>index.html</code>), sin servidor propio, sincronizado en tiempo real con Firebase
+      y publicado gratis en GitHub Pages.
+    </p>
+    <div class="section-label">¿Qué hace cada pestaña?</div>
+    <div class="config-item"><span><strong>Registrar</strong></span><span style="font-size:12px;color:var(--muted);text-align:right;max-width:60%">Captura un viaje nuevo: piloto, ruta, peso, diesel, viáticos. Calcula flete, diesel y ganancia automático.</span></div>
+    <div class="config-item"><span><strong>Viajes</strong></span><span style="font-size:12px;color:var(--muted);text-align:right;max-width:60%">Lista todos los viajes registrados, con filtros por piloto/producto/fecha y exportación a Excel.</span></div>
+    <div class="config-item"><span><strong>Impuestos</strong></span><span style="font-size:12px;color:var(--muted);text-align:right;max-width:60%">Calcula IVA, ISR e ISO (Régimen sobre Utilidades) por mes, trimestre o rango, total y por viaje.</span></div>
+    <div class="config-item"><span><strong>Ajustes</strong></span><span style="font-size:12px;color:var(--muted);text-align:right;max-width:60%">Administra pilotos, rutas, puntos de carga/descarga, productos y opciones de descarga.</span></div>
+    <div class="section-label">Información técnica</div>
+    <div class="config-item"><span>Repositorio</span><strong style="font-size:12px">github.com/stivgiron-ops/Fletes</strong></div>
+    <div class="config-item"><span>Hosting</span><strong style="font-size:12px">GitHub Pages</strong></div>
+    <div class="config-item"><span>Base de datos</span><strong style="font-size:12px">Firebase Firestore</strong></div>
+    <button class="btn btn-export btn-sm" style="margin-top:12px;width:auto" onclick="toggleCodigoFuente()" id="btn-ver-codigo">Ver código fuente completo</button>
+    <div id="codigo-fuente-wrap" style="display:none;margin-top:12px">
+      <div style="display:flex;gap:8px;margin-bottom:8px">
+        <button class="btn btn-export btn-sm" onclick="copiarCodigoFuente()">📋 Copiar todo</button>
+      </div>
+      <pre id="codigo-fuente-pre" style="background:#0d1117;color:#c9d1d9;padding:12px;border-radius:8px;font-size:10px;line-height:1.4;max-height:60vh;overflow:auto;white-space:pre-wrap;word-break:break-all">Cargando código fuente…</pre>
+    </div>
+  </div>
 </div>
 
 <!-- IMPUESTOS -->
@@ -821,6 +847,36 @@ window.cambiarPeriodoImpuestos=function(){
   document.getElementById('imp-trimestre').style.display=t==='trimestre'?'':'none';
   document.getElementById('imp-desde').style.display=t==='custom'?'':'none';
   document.getElementById('imp-hasta').style.display=t==='custom'?'':'none';
+}
+
+// ── Código fuente ────────────────────────────────────────────
+let _codigoFuenteCache=null;
+window.toggleCodigoFuente=async function(){
+  const wrap=document.getElementById('codigo-fuente-wrap');
+  const btn=document.getElementById('btn-ver-codigo');
+  const visible=wrap.style.display!=='none';
+  if(visible){ wrap.style.display='none'; btn.textContent='Ver código fuente completo'; return; }
+  wrap.style.display='block';
+  btn.textContent='Ocultar código fuente';
+  const pre=document.getElementById('codigo-fuente-pre');
+  if(_codigoFuenteCache){ pre.textContent=_codigoFuenteCache; return; }
+  try{
+    const r=await fetch(window.location.href.split('#')[0],{cache:'no-store'});
+    const txt=await r.text();
+    _codigoFuenteCache=txt;
+    pre.textContent=txt;
+  }catch(e){
+    pre.textContent='No se pudo cargar el código fuente ('+e.message+'). Revisa tu conexión.';
+  }
+}
+window.copiarCodigoFuente=async function(){
+  if(!_codigoFuenteCache){ toast('Primero abre "Ver código fuente completo"',false); return; }
+  try{
+    await navigator.clipboard.writeText(_codigoFuenteCache);
+    toast('Código copiado al portapapeles');
+  }catch(e){
+    toast('No se pudo copiar: '+e.message,false);
+  }
 }
 
 window.calcularImpuestos=function(){
