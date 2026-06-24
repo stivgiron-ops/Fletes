@@ -84,6 +84,7 @@ tr:hover td{background:rgba(59,158,255,.04)}
   <div class="nav-tab" onclick="showPage('viajes',this)">Viajes</div>
   <div class="nav-tab" onclick="showPage('config',this)">Ajustes</div>
   <div class="nav-tab" onclick="showPage('impuestos',this)">Impuestos</div>
+  <div class="nav-tab" onclick="showPage('unidades',this)">Unidades</div>
   <div class="sync-status">
     <div class="sync-dot loading" id="sync-dot"></div>
     <span id="sync-txt" style="color:var(--muted)">Conectando...</span>
@@ -312,6 +313,32 @@ tr:hover td{background:rgba(59,158,255,.04)}
   <div class="card" id="imp-resultado" style="display:none"></div>
 </div>
 
+<!-- UNIDADES -->
+<div class="page" id="page-unidades">
+  <div class="card">
+    <div class="card-title">🚚 Nueva unidad</div>
+    <div class="form-grid">
+      <div class="field">
+        <label>Tipo</label>
+        <select id="u-tipo" onchange="cambiarTipoUnidad()">
+          <option value="camion">Camión (por placa)</option>
+          <option value="equipo">Equipo (por número)</option>
+        </select>
+      </div>
+      <div class="field">
+        <label id="u-id-label">Placa</label>
+        <input type="text" id="u-id" placeholder="Ej. C-123ABC" style="text-transform:uppercase"/>
+      </div>
+      <div class="field">
+        <label>Marca / modelo (opcional)</label>
+        <input type="text" id="u-desc" placeholder="Ej. Freightliner FLD120"/>
+      </div>
+    </div>
+    <button class="btn btn-sm" style="background:var(--accent);color:#0f1923;font-family:'Barlow Condensed',sans-serif;font-weight:700;margin-top:8px" onclick="guardarUnidad()">Agregar unidad</button>
+  </div>
+  <div id="lista-unidades"></div>
+</div>
+
 <div class="toast" id="toast-el"></div>
 
 <!-- Funciones de UI disponibles inmediatamente, sin depender de Firebase -->
@@ -325,6 +352,7 @@ window.showPage = function(p, tab) {
   if (p === 'viajes') { if(window._renderTabla) window._renderTabla(); if(window._renderStats) window._renderStats(); }
   if (p === 'config') { if(window._renderConfig) window._renderConfig(); }
   if (p === 'impuestos') { if(window._renderImpuestos) window._renderImpuestos(); }
+  if (p === 'unidades') { if(window._renderUnidades) window._renderUnidades(); }
 };
 
 // Las demás funciones esperan a Firebase con una cola
@@ -351,12 +379,18 @@ window.agregarDescarga = _defer('agregarDescarga');
 window.quitarDescarga  = _defer('quitarDescarga');
 window.cambiarPeriodoImpuestos = _defer('cambiarPeriodoImpuestos');
 window.calcularImpuestos = _defer('calcularImpuestos');
+window.guardarUnidad = _defer('guardarUnidad');
+window.borrarUnidad = _defer('borrarUnidad');
+window.toggleUnidad = _defer('toggleUnidad');
+window.guardarRepuesto = _defer('guardarRepuesto');
+window.borrarRepuesto = _defer('borrarRepuesto');
+window.cambiarTipoUnidad = _defer('cambiarTipoUnidad');
 </script>
 
 <!-- Firebase SDK -->
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getFirestore, collection, doc, addDoc, deleteDoc, onSnapshot, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { getFirestore, collection, doc, addDoc, deleteDoc, onSnapshot, setDoc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBwWEArLnp7bAty0V9-0Y6UHvGAQZwwW3A",
@@ -439,6 +473,15 @@ onSnapshot(viajesCol, (snap)=>{
   setSyncStatus('err','Sin conexión');
   console.error(err);
 });
+
+// ── Unidades (camiones/equipos) realtime listener ──────────
+const unidadesCol = collection(db,'unidades');
+let unidades=[];
+onSnapshot(unidadesCol, (snap)=>{
+  unidades = snap.docs.map(d=>({id:d.id,...d.data()}));
+  unidades.sort((a,b)=>(a.identificador||'').localeCompare(b.identificador||''));
+  if(window._renderUnidades) window._renderUnidades();
+}, (err)=>{ console.error(err); });
 
 // ── Config realtime listener ───────────────────────────────
 onSnapshot(configRef, (snap)=>{
@@ -968,6 +1011,117 @@ window.calcularImpuestos=function(){
     </div>
   `;
 }
+
+// ── Unidades y Repuestos ────────────────────────────────────
+const CATEGORIAS_REPUESTO=['Llanta','Filtro de aceite','Filtro de aire','Filtro de combustible','Retenedor','Bushing','Batería','Banda','Rodamiento/Balero','Otro'];
+
+window.cambiarTipoUnidad=function(){
+  const t=document.getElementById('u-tipo').value;
+  document.getElementById('u-id-label').textContent = t==='camion' ? 'Placa' : 'Número de equipo';
+  document.getElementById('u-id').placeholder = t==='camion' ? 'Ej. C-123ABC' : 'Ej. EQ-05';
+}
+
+window.guardarUnidad=async function(){
+  const tipo=document.getElementById('u-tipo').value;
+  const identificador=document.getElementById('u-id').value.trim().toUpperCase();
+  const descripcion=document.getElementById('u-desc').value.trim();
+  if(!identificador){ toast('Ingresa la placa o número',false); return; }
+  if(unidades.some(u=>u.identificador===identificador)){ toast('Ya existe una unidad con ese identificador',false); return; }
+  try{
+    await addDoc(unidadesCol,{tipo,identificador,descripcion,repuestos:[]});
+    document.getElementById('u-id').value='';
+    document.getElementById('u-desc').value='';
+    toast('Unidad agregada');
+  }catch(e){ toast('Error: '+e.message,false); }
+}
+
+window.borrarUnidad=async function(id){
+  if(!confirm('¿Borrar esta unidad y todos sus repuestos registrados?'))return;
+  try{ await deleteDoc(doc(db,'unidades',id)); toast('Unidad eliminada'); }
+  catch(e){ toast('Error: '+e.message,false); }
+}
+
+window._unidadAbierta=null;
+window.toggleUnidad=function(id){
+  window._unidadAbierta = window._unidadAbierta===id ? null : id;
+  renderUnidades();
+}
+
+window.guardarRepuesto=async function(unidadId){
+  const cat=document.getElementById('rp-cat-'+unidadId).value;
+  const esp=document.getElementById('rp-esp-'+unidadId).value.trim();
+  const num=document.getElementById('rp-num-'+unidadId).value.trim();
+  const marca=document.getElementById('rp-marca-'+unidadId).value.trim();
+  const notas=document.getElementById('rp-notas-'+unidadId).value.trim();
+  if(!esp && !num){ toast('Ingresa al menos la especificación o el número de parte',false); return; }
+  const u=unidades.find(x=>x.id===unidadId);
+  if(!u)return;
+  const repuestos=[...(u.repuestos||[]), {categoria:cat,especificacion:esp,numeroParte:num,marca,notas}];
+  try{
+    await updateDoc(doc(db,'unidades',unidadId), {repuestos});
+    toast('Repuesto agregado');
+  }catch(e){ toast('Error: '+e.message,false); }
+}
+
+window.borrarRepuesto=async function(unidadId, idx){
+  const u=unidades.find(x=>x.id===unidadId);
+  if(!u)return;
+  const repuestos=(u.repuestos||[]).filter((_,i)=>i!==idx);
+  try{ await updateDoc(doc(db,'unidades',unidadId), {repuestos}); toast('Repuesto eliminado'); }
+  catch(e){ toast('Error: '+e.message,false); }
+}
+
+function renderUnidades(){
+  const cont=document.getElementById('lista-unidades');
+  if(!cont)return;
+  if(!unidades.length){
+    cont.innerHTML='<div class="card"><p class="empty" style="display:block">No hay unidades registradas aún</p></div>';
+    return;
+  }
+  cont.innerHTML=unidades.map(u=>{
+    const abierta=window._unidadAbierta===u.id;
+    const repuestos=u.repuestos||[];
+    const filasRepuestos=repuestos.length ? repuestos.map((r,i)=>`
+      <div class="config-item">
+        <span>
+          <span class="placa-tag" style="margin-right:6px">${r.categoria}</span>
+          <strong>${r.especificacion||''}</strong>
+          ${r.numeroParte?` · N° parte: <span style="font-family:monospace;color:var(--accent2)">${r.numeroParte}</span>`:''}
+          ${r.marca?` · ${r.marca}`:''}
+          ${r.notas?`<br><span style="font-size:11px;color:var(--muted)">${r.notas}</span>`:''}
+        </span>
+        <button class="btn btn-danger btn-sm" onclick="borrarRepuesto('${u.id}',${i})">✕</button>
+      </div>`).join('')
+      : `<p style="font-size:13px;color:var(--muted);padding:8px 0">Sin repuestos registrados todavía.</p>`;
+
+    const opcionesCat=CATEGORIAS_REPUESTO.map(c=>`<option value="${c}">${c}</option>`).join('');
+
+    return `
+    <div class="card">
+      <div class="card-title" style="display:flex;justify-content:space-between;align-items:center;cursor:pointer" onclick="toggleUnidad('${u.id}')">
+        <span>${u.tipo==='camion'?'🚚':'🔧'} ${u.identificador} ${u.descripcion?`<span style="font-size:13px;color:var(--muted);font-weight:400">— ${u.descripcion}</span>`:''}</span>
+        <span style="font-size:13px;color:var(--muted)">${abierta?'▲':'▼'} ${repuestos.length} repuesto${repuestos.length===1?'':'s'}</span>
+      </div>
+      ${abierta?`
+        <div class="section-label">Repuestos registrados</div>
+        ${filasRepuestos}
+        <div class="section-label" style="margin-top:14px">Agregar repuesto</div>
+        <div class="form-grid">
+          <div class="field"><label>Categoría</label><select id="rp-cat-${u.id}">${opcionesCat}</select></div>
+          <div class="field"><label>Especificación / medida</label><input type="text" id="rp-esp-${u.id}" placeholder="Ej. 11R22.5"/></div>
+          <div class="field"><label>Número de parte</label><input type="text" id="rp-num-${u.id}" placeholder="Ej. P553000"/></div>
+          <div class="field"><label>Marca</label><input type="text" id="rp-marca-${u.id}" placeholder="Ej. Fleetguard"/></div>
+        </div>
+        <div class="field" style="margin-top:8px"><label>Notas</label><input type="text" id="rp-notas-${u.id}" placeholder="Ej. eje delantero, cambiar cada 6 meses"/></div>
+        <div style="display:flex;gap:8px;margin-top:10px">
+          <button class="btn btn-sm" style="background:var(--accent);color:#0f1923;font-family:'Barlow Condensed',sans-serif;font-weight:700" onclick="guardarRepuesto('${u.id}')">Agregar repuesto</button>
+          <button class="btn btn-danger btn-sm" onclick="borrarUnidad('${u.id}')">Borrar unidad</button>
+        </div>
+      `:''}
+    </div>`;
+  }).join('');
+}
+window._renderUnidades=renderUnidades;
 
 // ── Init ───────────────────────────────────────────────────
 document.getElementById('f-fecha').value=new Date().toISOString().slice(0,10);
