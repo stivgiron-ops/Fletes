@@ -79,7 +79,11 @@ tr:hover td{background:rgba(59,158,255,.04)}
 <body>
 
 <!-- LOGIN -->
-<div id="login-screen" style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px">
+<div id="auth-loading" style="min-height:100vh;display:flex;align-items:center;justify-content:center">
+  <div style="color:var(--muted);font-family:'Barlow Condensed',sans-serif;font-size:18px">🚛 Cargando…</div>
+</div>
+
+<div id="login-screen" style="min-height:100vh;display:none;align-items:center;justify-content:center;padding:20px">
   <div class="card" style="max-width:340px;width:100%">
     <div class="card-title" style="justify-content:center;text-align:center">🚛 FLETES</div>
     <p style="font-size:13px;color:var(--muted);text-align:center;margin-bottom:16px">Inicia sesión para continuar</p>
@@ -99,6 +103,7 @@ tr:hover td{background:rgba(59,158,255,.04)}
   <div class="nav-tab" onclick="showPage('config',this)">Ajustes</div>
   <div class="nav-tab" onclick="showPage('impuestos',this)">Impuestos</div>
   <div class="nav-tab" onclick="showPage('unidades',this)">Unidades</div>
+  <div class="nav-tab" onclick="showPage('kilometraje',this)">Kilometraje</div>
   <div class="sync-status">
     <div class="sync-dot loading" id="sync-dot"></div>
     <span id="sync-txt" style="color:var(--muted)">Conectando...</span>
@@ -246,6 +251,7 @@ tr:hover td{background:rgba(59,158,255,.04)}
       <div class="field"><label>Cuota diesel (gal)</label><input type="number" id="r-diesel" placeholder="0" step="0.5"/></div>
       <div class="field"><label>Precio/quintal (Q)</label><input type="number" id="r-pxq" placeholder="0" step="0.01"/></div>
       <div class="field"><label>Peso fijo (qq) — 0 si varía</label><input type="number" id="r-pesofijo" placeholder="0" step="0.001"/></div>
+      <div class="field"><label>Kilómetros (ida)</label><input type="number" id="r-km" placeholder="0" step="0.1"/></div>
     </div>
     <button class="btn btn-sm" style="background:var(--accent);color:#0f1923;font-family:'Barlow Condensed',sans-serif;font-weight:700;margin-top:8px" onclick="guardarRuta()">Guardar ruta</button>
   </div>
@@ -358,6 +364,18 @@ tr:hover td{background:rgba(59,158,255,.04)}
   <div id="lista-unidades"></div>
 </div>
 
+<!-- KILOMETRAJE -->
+<div class="page" id="page-kilometraje">
+  <div class="card">
+    <div class="card-title">📍 Kilometraje por unidad</div>
+    <p style="font-size:13px;color:var(--muted)">
+      Se acumula automáticamente con cada viaje registrado (según los km configurados por ruta en Ajustes).
+      Alerta a partir de <strong>15,000 km</strong> desde el último mantenimiento marcado.
+    </p>
+  </div>
+  <div id="lista-kilometraje"></div>
+</div>
+
 <div class="toast" id="toast-el"></div>
 
 </div><!-- /app-shell -->
@@ -374,6 +392,7 @@ window.showPage = function(p, tab) {
   if (p === 'config') { if(window._renderConfig) window._renderConfig(); }
   if (p === 'impuestos') { if(window._renderImpuestos) window._renderImpuestos(); }
   if (p === 'unidades') { if(window._renderUnidades) window._renderUnidades(); }
+  if (p === 'kilometraje') { if(window._renderKilometraje) window._renderKilometraje(); }
 };
 
 // Las demás funciones esperan a Firebase con una cola
@@ -408,12 +427,13 @@ window.borrarRepuesto = _defer('borrarRepuesto');
 window.cambiarTipoUnidad = _defer('cambiarTipoUnidad');
 window.iniciarSesion = _defer('iniciarSesion');
 window.cerrarSesion = _defer('cerrarSesion');
+window.reiniciarKm = _defer('reiniciarKm');
 </script>
 
 <!-- Firebase SDK -->
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getFirestore, collection, doc, addDoc, deleteDoc, onSnapshot, setDoc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { getFirestore, collection, doc, addDoc, deleteDoc, onSnapshot, setDoc, getDoc, updateDoc, increment } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
 const firebaseConfig = {
@@ -443,14 +463,14 @@ const PILOTOS_DEF=[
 const CARGAS_DEF=["Puerto Barrios","KM100","Escuintla","ADM","Muelle PT. Barrios"];
 const DESCARGAS_DEF=["Nutriansa","El Cabro","El Cabro Original","Comayma","San Martin","San Isidro","Bodega PT. Barrios"];
 const RUTAS_DEF={
-  "Puerto Barrios||Nutriansa":             {pago:700,  diesel:105, pxq:12.25, pesofijo:0},
-  "ADM||San Isidro":                       {pago:250,  diesel:45,  pxq:7,     pesofijo:550.048},
-  "KM100||San Isidro":                     {pago:250,  diesel:45,  pxq:7,     pesofijo:550.048},
-  "Puerto Barrios||El Cabro":              {pago:600,  diesel:85,  pxq:10.67, pesofijo:0},
-  "Muelle PT. Barrios||Bodega PT. Barrios":{pago:100,  diesel:3.5, pxq:0.8,   pesofijo:0},
-  "Puerto Barrios||El Cabro Original":     {pago:600,  diesel:85,  pxq:13.75, pesofijo:0},
-  "Puerto Barrios||Comayma":               {pago:700,  diesel:100, pxq:300,   pesofijo:0},
-  "Escuintla||San Martin":                 {pago:200,  diesel:30,  pxq:6,     pesofijo:515},
+  "Puerto Barrios||Nutriansa":             {pago:700,  diesel:105, pxq:12.25, pesofijo:0,      km:0},
+  "ADM||San Isidro":                       {pago:250,  diesel:45,  pxq:7,     pesofijo:550.048,km:0},
+  "KM100||San Isidro":                     {pago:250,  diesel:45,  pxq:7,     pesofijo:550.048,km:0},
+  "Puerto Barrios||El Cabro":              {pago:600,  diesel:85,  pxq:10.67, pesofijo:0,      km:0},
+  "Muelle PT. Barrios||Bodega PT. Barrios":{pago:100,  diesel:3.5, pxq:0.8,   pesofijo:0,      km:0},
+  "Puerto Barrios||El Cabro Original":     {pago:600,  diesel:85,  pxq:13.75, pesofijo:0,      km:0},
+  "Puerto Barrios||Comayma":               {pago:700,  diesel:100, pxq:300,   pesofijo:0,      km:0},
+  "Escuintla||San Martin":                 {pago:200,  diesel:30,  pxq:6,     pesofijo:515,    km:0},
 };
 
 // ── State ──────────────────────────────────────────────────
@@ -601,7 +621,7 @@ window.autoFillRuta=function(){
       document.getElementById('peso-hint').textContent='';
     }
     document.getElementById('prev-piloto').textContent=Q(r.pago);
-    document.getElementById('prev-diesel').textContent=r.diesel;
+    document.getElementById('prev-diesel').textContent=r.diesel+(r.km>0&&r.diesel>0?' ('+(r.km/r.diesel).toFixed(1)+' km/gal)':'');
     document.getElementById('prev-pxq').textContent=Q(r.pxq);
     prev.classList.add('visible');
     calcTotal();
@@ -647,6 +667,8 @@ window.guardarViaje=async function(){
   const totalFlete=peso*pxq;
   const totalDiesel=diesel*pgalon;
   const totalCostos=pagoPiloto+totalDiesel+viaticos;
+  const rutaInfo=(config.rutas||{})[carga+'||'+descarga]||{};
+  const km=rutaInfo.km||0;
   try{
     await addDoc(viajesCol,{
       piloto,placa:p?p.placa:'',fecha,carga,descarga,boleta,
@@ -654,10 +676,16 @@ window.guardarViaje=async function(){
       pxq,totalFlete,diesel,pgalon,totalDiesel,
       pagoPiloto,viaticos,totalCostos,
       ganancia:totalFlete-totalCostos,
+      km, rendimiento: (km>0&&diesel>0) ? +(km/diesel).toFixed(2) : 0,
       obs:document.getElementById('f-obs').value.trim(),
       ts: Date.now()
     });
     toast('Viaje guardado y sincronizado ✓');
+    const unidad=unidades.find(u=>u.identificador===(p?p.placa:''));
+    if(unidad && km>0){
+      try{ await updateDoc(doc(db,'unidades',unidad.id), {kmAcumulado: increment(km)}); }
+      catch(e){ console.error('No se pudo actualizar kilometraje de la unidad', e); }
+    }
     ['f-boleta','f-peso','f-pxq','f-diesel','f-pgalon','f-pago-piloto','f-obs','f-total-flete','f-total-diesel','f-total-costos','f-ganancia'].forEach(id=>document.getElementById(id).value='');
     document.getElementById('f-viaticos').value=100;
     document.getElementById('f-piloto').value='';
@@ -842,7 +870,7 @@ function renderConfig(){
         <strong style="font-size:13px">${c} → ${d}</strong>
         <button class="btn btn-danger btn-sm" onclick="borrarRuta('${k.replace(/'/g,"\\'")}')">✕</button>
       </div>
-      <span class="ruta-tag">Piloto: Q${r.pago} · Diesel: ${r.diesel} gal · Q/qq: Q${r.pxq}${r.pesofijo>0?' · Peso fijo: '+r.pesofijo+' qq':''}</span>
+      <span class="ruta-tag">Piloto: Q${r.pago} · Diesel: ${r.diesel} gal · Q/qq: Q${r.pxq}${r.pesofijo>0?' · Peso fijo: '+r.pesofijo+' qq':''}${r.km>0?' · '+r.km+' km'+(r.diesel>0?' ('+(r.km/r.diesel).toFixed(1)+' km/gal)':''):''}</span>
     </div>`;
   }).join('');
   document.getElementById('lista-cargas').innerHTML=cargas.map((d,i)=>`
@@ -874,7 +902,8 @@ window.guardarRuta=async function(){
     pago:parseFloat(document.getElementById('r-pago').value)||0,
     diesel:parseFloat(document.getElementById('r-diesel').value)||0,
     pxq:parseFloat(document.getElementById('r-pxq').value)||0,
-    pesofijo:parseFloat(document.getElementById('r-pesofijo').value)||0
+    pesofijo:parseFloat(document.getElementById('r-pesofijo').value)||0,
+    km:parseFloat(document.getElementById('r-km').value)||0
   }};
   await saveConfig();toast('Ruta guardada');
 }
@@ -1165,6 +1194,77 @@ function renderUnidades(){
 }
 window._renderUnidades=renderUnidades;
 
+// ── Kilometraje ──────────────────────────────────────────────
+const KM_ALERTA=15000;
+
+window.reiniciarKm=async function(unidadId){
+  if(!confirm('¿Confirmas que ya se realizó el mantenimiento y quieres reiniciar el contador de km a 0?'))return;
+  try{
+    await updateDoc(doc(db,'unidades',unidadId), {kmAcumulado:0, ultimoMantenimiento:new Date().toISOString().slice(0,10)});
+    toast('Contador de kilometraje reiniciado');
+  }catch(e){ toast('Error: '+e.message,false); }
+}
+
+function renderKilometraje(){
+  const cont=document.getElementById('lista-kilometraje');
+  if(!cont)return;
+  const camiones=unidades.filter(u=>u.tipo==='camion');
+  if(!camiones.length){
+    cont.innerHTML='<div class="card"><p class="empty" style="display:block">No hay camiones registrados en Unidades todavía</p></div>';
+    return;
+  }
+  cont.innerHTML=camiones.map(u=>{
+    const km=u.kmAcumulado||0;
+    const pct=Math.min(100,(km/KM_ALERTA)*100);
+    let color='var(--success)', estado='Normal';
+    if(km>=KM_ALERTA){ color='var(--danger)'; estado='⚠ Requiere mantenimiento'; }
+    else if(km>=KM_ALERTA*0.8){ color='var(--accent)'; estado='Próximo a mantenimiento'; }
+
+    const viajesUnidad=viajes.filter(v=>v.placa===u.identificador && v.km>0)
+      .sort((a,b)=>b.fecha.localeCompare(a.fecha));
+
+    const filasViajes=viajesUnidad.length ? viajesUnidad.map(v=>`
+      <tr>
+        <td style="white-space:nowrap">${v.fecha}</td>
+        <td style="font-size:11px">${v.carga} → ${v.descarga}</td>
+        <td>${v.km}</td>
+        <td>${N(v.diesel||0)}</td>
+        <td style="font-weight:600">${v.rendimiento?v.rendimiento+' km/gal':'—'}</td>
+      </tr>`).join('')
+      : `<tr><td colspan="5" style="text-align:center;color:var(--muted)">Sin viajes con km registrados</td></tr>`;
+
+    const rendimientoProm = viajesUnidad.length
+      ? (viajesUnidad.reduce((s,v)=>s+(v.rendimiento||0),0)/viajesUnidad.filter(v=>v.rendimiento>0).length || 0).toFixed(1)
+      : 0;
+
+    return `
+    <div class="card">
+      <div class="card-title" style="display:flex;justify-content:space-between;align-items:center">
+        <span>🚚 ${u.identificador} ${u.descripcion?`<span style="font-size:13px;color:var(--muted);font-weight:400">— ${u.descripcion}</span>`:''}</span>
+        <span style="font-size:13px;color:${color};font-weight:600">${estado}</span>
+      </div>
+      <div style="background:var(--surface);border-radius:8px;height:10px;overflow:hidden;margin:10px 0">
+        <div style="background:${color};height:100%;width:${pct}%;transition:width .3s"></div>
+      </div>
+      <div class="stats">
+        <div class="stat"><div class="stat-val">${N(km)}</div><div class="stat-lbl">km acumulados</div></div>
+        <div class="stat"><div class="stat-val">${N(KM_ALERTA-km>0?KM_ALERTA-km:0)}</div><div class="stat-lbl">km para alerta</div></div>
+        <div class="stat"><div class="stat-val">${rendimientoProm>0?rendimientoProm:'—'}</div><div class="stat-lbl">km/gal promedio</div></div>
+      </div>
+      ${u.ultimoMantenimiento?`<p style="font-size:12px;color:var(--muted);margin:6px 0">Último mantenimiento marcado: ${u.ultimoMantenimiento}</p>`:''}
+      <button class="btn btn-export btn-sm" style="width:auto;margin-bottom:14px" onclick="reiniciarKm('${u.id}')">Marcar mantenimiento / reiniciar contador</button>
+      <div class="section-label">Rendimiento por viaje</div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Fecha</th><th>Ruta</th><th>Km</th><th>Diesel</th><th>Rendimiento</th></tr></thead>
+          <tbody>${filasViajes}</tbody>
+        </table>
+      </div>
+    </div>`;
+  }).join('');
+}
+window._renderKilometraje=renderKilometraje;
+
 // ── Autenticación ────────────────────────────────────────────
 window.iniciarSesion=async function(){
   const email=document.getElementById('login-email').value.trim();
@@ -1192,6 +1292,8 @@ window.cerrarSesion=async function(){
 onAuthStateChanged(auth, (user)=>{
   const loginScreen=document.getElementById('login-screen');
   const appShell=document.getElementById('app-shell');
+  const authLoading=document.getElementById('auth-loading');
+  if(authLoading) authLoading.style.display='none';
   if(user){
     loginScreen.style.display='none';
     appShell.style.display='';
