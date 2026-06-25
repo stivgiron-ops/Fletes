@@ -78,6 +78,20 @@ tr:hover td{background:rgba(59,158,255,.04)}
 </head>
 <body>
 
+<!-- LOGIN -->
+<div id="login-screen" style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px">
+  <div class="card" style="max-width:340px;width:100%">
+    <div class="card-title" style="justify-content:center;text-align:center">🚛 FLETES</div>
+    <p style="font-size:13px;color:var(--muted);text-align:center;margin-bottom:16px">Inicia sesión para continuar</p>
+    <div class="field"><label>Correo</label><input type="email" id="login-email" placeholder="tucorreo@ejemplo.com" autocomplete="username"/></div>
+    <div class="field" style="margin-top:10px"><label>Contraseña</label><input type="password" id="login-pass" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')iniciarSesion()"/></div>
+    <button class="btn btn-primary" style="margin-top:14px" onclick="iniciarSesion()">Iniciar sesión</button>
+    <p id="login-error" style="color:var(--danger);font-size:13px;text-align:center;margin-top:10px;display:none"></p>
+  </div>
+</div>
+
+<div id="app-shell" style="display:none">
+
 <nav>
   <div class="nav-brand">🚛 FLETES</div>
   <div class="nav-tab active" onclick="showPage('registro',this)">Registrar</div>
@@ -252,6 +266,11 @@ tr:hover td{background:rgba(59,158,255,.04)}
     <div id="lista-descargas"></div>
   </div>
   <div class="card">
+    <div class="card-title">🔐 Sesión</div>
+    <div class="config-item"><span>Conectado como</span><strong id="sesion-correo" style="font-size:13px">—</strong></div>
+    <button class="btn btn-export btn-sm" style="margin-top:8px;width:auto" onclick="cerrarSesion()">Cerrar sesión</button>
+  </div>
+  <div class="card">
     <div class="card-title" style="color:var(--danger)">⚠ Zona de peligro</div>
     <button class="btn btn-danger" onclick="borrarTodo()">Borrar todos los viajes</button>
   </div>
@@ -341,6 +360,8 @@ tr:hover td{background:rgba(59,158,255,.04)}
 
 <div class="toast" id="toast-el"></div>
 
+</div><!-- /app-shell -->
+
 <!-- Funciones de UI disponibles inmediatamente, sin depender de Firebase -->
 <script>
 // showPage no necesita Firebase — solo muestra/oculta secciones
@@ -385,12 +406,15 @@ window.toggleUnidad = _defer('toggleUnidad');
 window.guardarRepuesto = _defer('guardarRepuesto');
 window.borrarRepuesto = _defer('borrarRepuesto');
 window.cambiarTipoUnidad = _defer('cambiarTipoUnidad');
+window.iniciarSesion = _defer('iniciarSesion');
+window.cerrarSesion = _defer('cerrarSesion');
 </script>
 
 <!-- Firebase SDK -->
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getFirestore, collection, doc, addDoc, deleteDoc, onSnapshot, setDoc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBwWEArLnp7bAty0V9-0Y6UHvGAQZwwW3A",
@@ -403,6 +427,7 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
+const auth = getAuth(app);
 
 // ── Defaults ──────────────────────────────────────────────
 const PILOTOS_DEF=[
@@ -463,35 +488,52 @@ async function saveConfig(){
 // ── Viajes realtime listener ───────────────────────────────
 const viajesCol = collection(db,'viajes');
 
-onSnapshot(viajesCol, (snap)=>{
-  viajes = snap.docs.map(d=>({id:d.id,...d.data()}));
-  viajes.sort((a,b)=>b.fecha.localeCompare(a.fecha));
-  renderTabla();
-  renderStats();
-  setSyncStatus('ok','Sincronizado');
-}, (err)=>{
-  setSyncStatus('err','Sin conexión');
-  console.error(err);
-});
-
 // ── Unidades (camiones/equipos) realtime listener ──────────
 const unidadesCol = collection(db,'unidades');
 let unidades=[];
-onSnapshot(unidadesCol, (snap)=>{
-  unidades = snap.docs.map(d=>({id:d.id,...d.data()}));
-  unidades.sort((a,b)=>(a.identificador||'').localeCompare(b.identificador||''));
-  if(window._renderUnidades) window._renderUnidades();
-}, (err)=>{ console.error(err); });
 
-// ── Config realtime listener ───────────────────────────────
-onSnapshot(configRef, (snap)=>{
-  if(snap.exists()){
-    config = snap.data();
-    populateSelects();
-    const pg=document.querySelector('.page.active');
-    if(pg&&pg.id==='page-config') renderConfig();
-  }
-});
+window._appIniciada=false;
+function iniciarApp(){
+  if(window._appIniciada)return;
+  window._appIniciada=true;
+
+  onSnapshot(viajesCol, (snap)=>{
+    viajes = snap.docs.map(d=>({id:d.id,...d.data()}));
+    viajes.sort((a,b)=>b.fecha.localeCompare(a.fecha));
+    renderTabla();
+    renderStats();
+    setSyncStatus('ok','Sincronizado');
+  }, (err)=>{
+    setSyncStatus('err','Sin conexión');
+    console.error(err);
+  });
+
+  onSnapshot(unidadesCol, (snap)=>{
+    unidades = snap.docs.map(d=>({id:d.id,...d.data()}));
+    unidades.sort((a,b)=>(a.identificador||'').localeCompare(b.identificador||''));
+    if(window._renderUnidades) window._renderUnidades();
+  }, (err)=>{ console.error(err); });
+
+  onSnapshot(configRef, (snap)=>{
+    if(snap.exists()){
+      config = snap.data();
+      populateSelects();
+      const pg=document.querySelector('.page.active');
+      if(pg&&pg.id==='page-config') renderConfig();
+    }
+  });
+
+  document.getElementById('f-fecha').value=new Date().toISOString().slice(0,10);
+  const hoyStr=new Date().toISOString().slice(0,10);
+  const primerDia=hoyStr.slice(0,7)+'-01';
+  document.getElementById('fil-desde').value=primerDia;
+  document.getElementById('fil-hasta').value=hoyStr;
+  setSyncStatus('loading','Conectando...');
+  populateSelects();
+  loadConfig();
+  const mf={name:"Control de Viajes",short_name:"Viajes",start_url:".",display:"standalone",background_color:"#0f1923",theme_color:"#0f1923",icons:[{src:"https://placehold.co/192x192/f5a623/0f1923?text=V",sizes:"192x192",type:"image/png"},{src:"https://placehold.co/512x512/f5a623/0f1923?text=V",sizes:"512x512",type:"image/png"}]};
+  document.getElementById('mf').href=URL.createObjectURL(new Blob([JSON.stringify(mf)],{type:'application/json'}));
+}
 
 // ── Helpers ────────────────────────────────────────────────
 function toast(msg,ok=true){
@@ -1123,24 +1165,44 @@ function renderUnidades(){
 }
 window._renderUnidades=renderUnidades;
 
-// ── Init ───────────────────────────────────────────────────
-document.getElementById('f-fecha').value=new Date().toISOString().slice(0,10);
-const hoyStr=new Date().toISOString().slice(0,10);
-const primerDia=hoyStr.slice(0,7)+'-01';
-document.getElementById('fil-desde').value=primerDia;
-document.getElementById('fil-hasta').value=hoyStr;
-setSyncStatus('loading','Conectando...');
+// ── Autenticación ────────────────────────────────────────────
+window.iniciarSesion=async function(){
+  const email=document.getElementById('login-email').value.trim();
+  const pass=document.getElementById('login-pass').value;
+  const errEl=document.getElementById('login-error');
+  errEl.style.display='none';
+  if(!email||!pass){ errEl.textContent='Ingresa correo y contraseña'; errEl.style.display='block'; return; }
+  try{
+    await signInWithEmailAndPassword(auth, email, pass);
+  }catch(e){
+    let msg='No se pudo iniciar sesión';
+    if(e.code==='auth/invalid-credential'||e.code==='auth/wrong-password'||e.code==='auth/user-not-found') msg='Correo o contraseña incorrectos';
+    else if(e.code==='auth/invalid-email') msg='Correo inválido';
+    else if(e.code==='auth/too-many-requests') msg='Demasiados intentos, espera un momento';
+    errEl.textContent=msg;
+    errEl.style.display='block';
+  }
+}
 
-// Cargar selects con datos por defecto INMEDIATAMENTE, sin esperar a Firebase
-// Así los selects funcionan aunque Firebase tarde en responder
-populateSelects();
+window.cerrarSesion=async function(){
+  if(!confirm('¿Cerrar sesión?'))return;
+  try{ await signOut(auth); }catch(e){ console.error(e); }
+}
 
-// Luego Firebase sobreescribe con los datos guardados en la nube
-loadConfig();
-
-const mf={name:"Control de Viajes",short_name:"Viajes",start_url:".",display:"standalone",background_color:"#0f1923",theme_color:"#0f1923",icons:[{src:"https://placehold.co/192x192/f5a623/0f1923?text=V",sizes:"192x192",type:"image/png"},{src:"https://placehold.co/512x512/f5a623/0f1923?text=V",sizes:"512x512",type:"image/png"}]};
-document.getElementById('mf').href=URL.createObjectURL(new Blob([JSON.stringify(mf)],{type:'application/json'}));
-
+onAuthStateChanged(auth, (user)=>{
+  const loginScreen=document.getElementById('login-screen');
+  const appShell=document.getElementById('app-shell');
+  if(user){
+    loginScreen.style.display='none';
+    appShell.style.display='';
+    const correoEl=document.getElementById('sesion-correo');
+    if(correoEl) correoEl.textContent=user.email||'—';
+    iniciarApp();
+  } else {
+    loginScreen.style.display='flex';
+    appShell.style.display='none';
+  }
+});
 </script>
 </body>
 </html>
