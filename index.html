@@ -245,8 +245,8 @@ tr:hover td{background:rgba(59,158,255,.04)}
     <div id="lista-rutas"></div>
     <div class="section-label" style="margin-top:16px">Agregar / editar ruta</div>
     <div class="form-grid">
-      <div class="field"><label>Carga</label><select id="r-carga"></select></div>
-      <div class="field"><label>Descarga</label><select id="r-descarga"></select></div>
+      <div class="field"><label>Carga</label><select id="r-carga" onchange="autoFillFormRuta()"></select></div>
+      <div class="field"><label>Descarga</label><select id="r-descarga" onchange="autoFillFormRuta()"></select></div>
       <div class="field"><label>Pago piloto (Q)</label><input type="number" id="r-pago" placeholder="0" step="0.01"/></div>
       <div class="field"><label>Cuota diesel (gal)</label><input type="number" id="r-diesel" placeholder="0" step="0.5"/></div>
       <div class="field"><label>Precio/quintal (Q)</label><input type="number" id="r-pxq" placeholder="0" step="0.01"/></div>
@@ -428,6 +428,7 @@ window.cambiarTipoUnidad = _defer('cambiarTipoUnidad');
 window.iniciarSesion = _defer('iniciarSesion');
 window.cerrarSesion = _defer('cerrarSesion');
 window.reiniciarKm = _defer('reiniciarKm');
+window.autoFillFormRuta = _defer('autoFillFormRuta');
 </script>
 
 <!-- Firebase SDK -->
@@ -894,6 +895,18 @@ window.quitarPiloto=async function(i){
   config.pilotos=(config.pilotos||[]).filter((_,j)=>j!==i);
   await saveConfig();renderConfig();
 }
+window.autoFillFormRuta=function(){
+  const c=document.getElementById('r-carga').value;
+  const d=document.getElementById('r-descarga').value;
+  if(!c||!d)return;
+  const r=(config.rutas||{})[c+'||'+d];
+  document.getElementById('r-pago').value     = r ? r.pago     : '';
+  document.getElementById('r-diesel').value   = r ? r.diesel   : '';
+  document.getElementById('r-pxq').value      = r ? r.pxq      : '';
+  document.getElementById('r-pesofijo').value = r ? (r.pesofijo||'') : '';
+  document.getElementById('r-km').value       = r ? (r.km||'') : '';
+}
+
 window.guardarRuta=async function(){
   const c=document.getElementById('r-carga').value;
   const d=document.getElementById('r-descarga').value;
