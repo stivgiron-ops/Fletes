@@ -564,6 +564,7 @@ function toast(msg,ok=true){
 }
 function Q(n){return 'Q'+(+n).toLocaleString('es-GT',{minimumFractionDigits:2,maximumFractionDigits:2});}
 function N(n){return (+n).toLocaleString('es-GT',{maximumFractionDigits:3});}
+function FD(f){ if(!f)return ''; const[y,m,d]=f.split('-'); return d+'/'+m+'/'+y; }
 
 // showPage ya está definido en el script principal arriba
 // Exponemos renderTabla/renderStats/renderConfig para que showPage pueda llamarlos
@@ -732,7 +733,7 @@ function renderTabla(){
   empty.style.display='none';
   tbody.innerHTML=data.map((v,i)=>`<tr>
     <td style="color:var(--muted)">${data.length-i}</td>
-    <td style="white-space:nowrap">${v.fecha}</td>
+    <td style="white-space:nowrap">${FD(v.fecha)}</td>
     <td style="font-size:11px">${v.piloto}</td>
     <td style="font-family:monospace;color:var(--accent);font-size:11px">${v.placa||''}</td>
     <td style="font-size:11px">${v.carga}</td>
@@ -1055,7 +1056,7 @@ window.calcularImpuestos=function(){
 
   const filasHtml=filasViajes.length? filasViajes.map(f=>`
     <tr>
-      <td style="white-space:nowrap">${f.v.fecha}</td>
+      <td style="white-space:nowrap">${FD(f.v.fecha)}</td>
       <td style="font-size:11px">${f.v.piloto||''}</td>
       <td style="font-family:monospace;color:var(--accent2);font-size:11px">${f.v.boleta||''}</td>
       <td>${Q(f.tf)}</td>
@@ -1238,7 +1239,7 @@ function renderKilometraje(){
 
     const filasViajes=viajesUnidad.length ? viajesUnidad.map(v=>`
       <tr>
-        <td style="white-space:nowrap">${v.fecha}</td>
+        <td style="white-space:nowrap">${FD(v.fecha)}</td>
         <td style="font-size:11px">${v.carga} → ${v.descarga}</td>
         <td>${v.km}</td>
         <td>${N(v.diesel||0)}</td>
