@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#0f1923"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-title" content="Viajes"/>
-<title>Control de Viajes</title>
+<title>FLETES — Transportes Ruano</title>
 <link rel="manifest" id="mf"/>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700&family=Barlow:wght@400;500&display=swap" rel="stylesheet"/>
 <style>
@@ -552,7 +552,7 @@ function iniciarApp(){
   setSyncStatus('loading','Conectando...');
   populateSelects();
   loadConfig();
-  const mf={name:"Control de Viajes",short_name:"Viajes",start_url:".",display:"standalone",background_color:"#0f1923",theme_color:"#0f1923",icons:[{src:"https://placehold.co/192x192/f5a623/0f1923?text=V",sizes:"192x192",type:"image/png"},{src:"https://placehold.co/512x512/f5a623/0f1923?text=V",sizes:"512x512",type:"image/png"}]};
+  const mf={name:"FLETES — Transportes Ruano",short_name:"FLETES",start_url:".",display:"standalone",background_color:"#0f1923",theme_color:"#0f1923",icons:[{src:"https://raw.githubusercontent.com/stivgiron-ops/Fletes/main/assets/icono.png",sizes:"192x192",type:"image/png"},{src:"https://raw.githubusercontent.com/stivgiron-ops/Fletes/main/assets/icono.png",sizes:"512x512",type:"image/png"}]};
   document.getElementById('mf').href=URL.createObjectURL(new Blob([JSON.stringify(mf)],{type:'application/json'}));
 }
 
