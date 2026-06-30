@@ -552,7 +552,7 @@ function iniciarApp(){
   setSyncStatus('loading','Conectando...');
   populateSelects();
   loadConfig();
-  const mf={name:"FLETES — Transportes Ruano",short_name:"FLETES",start_url:".",display:"standalone",background_color:"#0f1923",theme_color:"#0f1923",icons:[{src:"https://raw.githubusercontent.com/stivgiron-ops/Fletes/main/assets/icono.png",sizes:"192x192",type:"image/png"},{src:"https://raw.githubusercontent.com/stivgiron-ops/Fletes/main/assets/icono.png",sizes:"512x512",type:"image/png"}]};
+  const mf={name:"FLETES — Transportes Ruano",short_name:"FLETES",start_url:".",display:"standalone",background_color:"#0f1923",theme_color:"#0f1923",icons:[{src:"https://stivgiron-ops.github.io/Fletes/assets/icono.png",sizes:"192x192",type:"image/png"},{src:"https://stivgiron-ops.github.io/Fletes/assets/icono.png",sizes:"512x512",type:"image/png"}]};
   document.getElementById('mf').href=URL.createObjectURL(new Blob([JSON.stringify(mf)],{type:'application/json'}));
 }
 
@@ -701,14 +701,32 @@ window.guardarViaje=async function(){
   btn.disabled=false;btn.textContent='✓ Guardar viaje';
 }
 
+window._pendienteBorrar={};
 window.borrarViaje=async function(id){
-  if(!confirm('¿Borrar este viaje?'))return;
-  try{ await deleteDoc(doc(db,'viajes',id)); toast('Viaje eliminado',false); }
-  catch(e){ toast('Error: '+e.message,false); }
+  if(window._pendienteBorrar[id]){
+    clearTimeout(window._pendienteBorrar[id].timer);
+    delete window._pendienteBorrar[id];
+    try{ await deleteDoc(doc(db,'viajes',id)); toast('Viaje eliminado',false); }
+    catch(e){ toast('Error: '+e.message,false); }
+    return;
+  }
+  // Primer clic — pedir confirmación visual
+  window._pendienteBorrar[id]={
+    timer: setTimeout(()=>{
+      delete window._pendienteBorrar[id];
+      const btn=document.getElementById('btn-borrar-'+id);
+      if(btn){ btn.textContent='✕'; btn.style.background=''; }
+    }, 4000)
+  };
+  const btn=document.getElementById('btn-borrar-'+id);
+  if(btn){ btn.textContent='¿Confirmar?'; btn.style.background='var(--danger)'; btn.style.color='#fff'; }
+  toast('Toca de nuevo para confirmar el borrado',false);
 }
 
 window.borrarTodo=async function(){
-  if(!confirm('¿Borrar TODOS los viajes? No se puede deshacer.'))return;
+  if(!confirm('¿Borrar TODOS los viajes?\n\nEsta acción NO se puede deshacer.'))return;
+  const confirmacion=prompt('Escribe BORRAR para confirmar:');
+  if(confirmacion!=='BORRAR'){ toast('Cancelado',false); return; }
   try{
     await Promise.all(viajes.map(v=>deleteDoc(doc(db,'viajes',v.id))));
     toast('Todos los viajes eliminados',false);
@@ -750,7 +768,7 @@ function renderTabla(){
     <td>${Q(v.pagoPiloto||0)}</td>
     <td style="font-weight:600;color:${(v.ganancia||0)>=0?'var(--success)':'var(--danger)'}">${Q(v.ganancia||0)}</td>
     <td style="font-size:11px;color:var(--muted);max-width:160px">${v.obs||''}</td>
-    <td><button class="btn btn-danger" onclick="borrarViaje('${v.id}')">✕</button></td>
+    <td><button id="btn-borrar-${v.id}" class="btn btn-danger" onclick="borrarViaje('${v.id}')">✕</button></td>
   </tr>`).join('');
 }
 
@@ -1121,9 +1139,24 @@ window.guardarUnidad=async function(){
 }
 
 window.borrarUnidad=async function(id){
-  if(!confirm('¿Borrar esta unidad y todos sus repuestos registrados?'))return;
-  try{ await deleteDoc(doc(db,'unidades',id)); toast('Unidad eliminada'); }
-  catch(e){ toast('Error: '+e.message,false); }
+  const btnId='btn-borrar-unidad-'+id;
+  if(window._pendienteBorrar[btnId]){
+    clearTimeout(window._pendienteBorrar[btnId].timer);
+    delete window._pendienteBorrar[btnId];
+    try{ await deleteDoc(doc(db,'unidades',id)); toast('Unidad eliminada',false); }
+    catch(e){ toast('Error: '+e.message,false); }
+    return;
+  }
+  window._pendienteBorrar[btnId]={
+    timer: setTimeout(()=>{
+      delete window._pendienteBorrar[btnId];
+      const btn=document.getElementById(btnId);
+      if(btn){ btn.textContent='Borrar unidad'; btn.style.background=''; btn.style.color=''; }
+    }, 4000)
+  };
+  const btn=document.getElementById(btnId);
+  if(btn){ btn.textContent='¿Confirmar?'; btn.style.background='var(--danger)'; btn.style.color='#fff'; }
+  toast('Toca de nuevo para confirmar el borrado',false);
 }
 
 window._unidadAbierta=null;
@@ -1149,11 +1182,27 @@ window.guardarRepuesto=async function(unidadId){
 }
 
 window.borrarRepuesto=async function(unidadId, idx){
-  const u=unidades.find(x=>x.id===unidadId);
-  if(!u)return;
-  const repuestos=(u.repuestos||[]).filter((_,i)=>i!==idx);
-  try{ await updateDoc(doc(db,'unidades',unidadId), {repuestos}); toast('Repuesto eliminado'); }
-  catch(e){ toast('Error: '+e.message,false); }
+  const btnId='btn-borrar-rp-'+unidadId+'-'+idx;
+  if(window._pendienteBorrar[btnId]){
+    clearTimeout(window._pendienteBorrar[btnId].timer);
+    delete window._pendienteBorrar[btnId];
+    const u=unidades.find(x=>x.id===unidadId);
+    if(!u)return;
+    const repuestos=(u.repuestos||[]).filter((_,i)=>i!==idx);
+    try{ await updateDoc(doc(db,'unidades',unidadId), {repuestos}); toast('Repuesto eliminado',false); }
+    catch(e){ toast('Error: '+e.message,false); }
+    return;
+  }
+  window._pendienteBorrar[btnId]={
+    timer: setTimeout(()=>{
+      delete window._pendienteBorrar[btnId];
+      const btn=document.getElementById(btnId);
+      if(btn){ btn.textContent='✕'; btn.style.background=''; btn.style.color=''; }
+    }, 4000)
+  };
+  const btn=document.getElementById(btnId);
+  if(btn){ btn.textContent='¿Confirmar?'; btn.style.background='var(--danger)'; btn.style.color='#fff'; }
+  toast('Toca de nuevo para confirmar el borrado',false);
 }
 
 function renderUnidades(){
@@ -1175,7 +1224,7 @@ function renderUnidades(){
           ${r.marca?` · ${r.marca}`:''}
           ${r.notas?`<br><span style="font-size:11px;color:var(--muted)">${r.notas}</span>`:''}
         </span>
-        <button class="btn btn-danger btn-sm" onclick="borrarRepuesto('${u.id}',${i})">✕</button>
+        <button class="btn btn-danger btn-sm" id="btn-borrar-rp-${u.id}-${i}" onclick="borrarRepuesto('${u.id}',${i})">✕</button>
       </div>`).join('')
       : `<p style="font-size:13px;color:var(--muted);padding:8px 0">Sin repuestos registrados todavía.</p>`;
 
@@ -1200,7 +1249,7 @@ function renderUnidades(){
         <div class="field" style="margin-top:8px"><label>Notas</label><input type="text" id="rp-notas-${u.id}" placeholder="Ej. eje delantero, cambiar cada 6 meses"/></div>
         <div style="display:flex;gap:8px;margin-top:10px">
           <button class="btn btn-sm" style="background:var(--accent);color:#0f1923;font-family:'Barlow Condensed',sans-serif;font-weight:700" onclick="guardarRepuesto('${u.id}')">Agregar repuesto</button>
-          <button class="btn btn-danger btn-sm" onclick="borrarUnidad('${u.id}')">Borrar unidad</button>
+          <button id="btn-borrar-unidad-${u.id}" class="btn btn-danger btn-sm" onclick="borrarUnidad('${u.id}')">Borrar unidad</button>
         </div>
       `:''}
     </div>`;
