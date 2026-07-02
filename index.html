@@ -1264,14 +1264,6 @@ function renderUnidades(){
         r.marca         ? `🏷️ Marca: ${r.marca}` : '',
         r.notas         ? `📝 Notas: ${r.notas}` : '',
       ].filter(Boolean).join('\n');
-      const textoCopiar=[
-        `Unidad: ${u.identificador}${u.descripcion?' - '+u.descripcion:''}`,
-        `Categoria: ${r.categoria}`,
-        r.especificacion ? `Especificacion: ${r.especificacion}` : '',
-        r.numeroParte    ? `N. parte: ${r.numeroParte}` : '',
-        r.marca          ? `Marca: ${r.marca}` : '',
-        r.notas          ? `Notas: ${r.notas}` : '',
-      ].filter(Boolean).join(' | ');
       return `
       <div class="config-item">
         <span>
@@ -1281,10 +1273,7 @@ function renderUnidades(){
           ${r.marca?` · ${r.marca}`:''}
           ${r.notas?`<br><span style="font-size:11px;color:var(--muted)">${r.notas}</span>`:''}
         </span>
-        <div style="display:flex;gap:6px">
-          <button class="btn btn-export btn-sm btn-copiar-rp" data-texto="${textoCopiar.replace(/"/g,'&quot;')}" title="Copiar">📋</button>
-          <button class="btn btn-danger btn-sm" id="btn-borrar-rp-${u.id}-${i}" onclick="borrarRepuesto('${u.id}',${i})">✕</button>
-        </div>
+        <button class="btn btn-danger btn-sm" id="btn-borrar-rp-${u.id}-${i}" onclick="borrarRepuesto('${u.id}',${i})">✕</button>
       </div>`;
     }).join('')
       : `<p style="font-size:13px;color:var(--muted);padding:8px 0">Sin repuestos registrados todavía.</p>`;
@@ -1393,16 +1382,6 @@ function renderKilometraje(){
 }
 window._renderKilometraje=renderKilometraje;
 
-// Listener global para copiar repuestos
-document.addEventListener('click', function(e){
-  const btn=e.target.closest('.btn-copiar-rp');
-  if(!btn)return;
-  const texto=btn.getAttribute('data-texto');
-  if(!texto)return;
-  navigator.clipboard.writeText(texto)
-    .then(()=>{ toast('Copiado al portapapeles'); })
-    .catch(()=>{ toast('No se pudo copiar',false); });
-});
 
 window.iniciarSesion=async function(){
   const email=document.getElementById('login-email').value.trim();
