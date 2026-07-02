@@ -1273,10 +1273,7 @@ function renderUnidades(){
           ${r.marca?` · ${r.marca}`:''}
           ${r.notas?`<br><span style="font-size:11px;color:var(--muted)">${r.notas}</span>`:''}
         </span>
-        <div style="display:flex;gap:6px;align-items:center">
-          <button class="btn btn-export btn-sm" title="Copiar para chat" onclick="copiarRepuesto('${u.id}',${i})">📋</button>
-          <button class="btn btn-danger btn-sm" id="btn-borrar-rp-${u.id}-${i}" onclick="borrarRepuesto('${u.id}',${i})">✕</button>
-        </div>
+        <button class="btn btn-danger btn-sm" id="btn-borrar-rp-${u.id}-${i}" onclick="borrarRepuesto('${u.id}',${i})">✕</button>
       </div>`;
     }).join('')
       : `<p style="font-size:13px;color:var(--muted);padding:8px 0">Sin repuestos registrados todavía.</p>`;
