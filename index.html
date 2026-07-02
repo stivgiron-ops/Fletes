@@ -424,6 +424,7 @@ window.borrarUnidad = _defer('borrarUnidad');
 window.toggleUnidad = _defer('toggleUnidad');
 window.guardarRepuesto = _defer('guardarRepuesto');
 window.borrarRepuesto = _defer('borrarRepuesto');
+window.agregarCategoriaRepuesto = _defer('agregarCategoriaRepuesto');
 window.cambiarTipoUnidad = _defer('cambiarTipoUnidad');
 window.iniciarSesion = _defer('iniciarSesion');
 window.cerrarSesion = _defer('cerrarSesion');
@@ -1116,7 +1117,8 @@ window.calcularImpuestos=function(){
 }
 
 // ── Unidades y Repuestos ────────────────────────────────────
-const CATEGORIAS_REPUESTO=['Llanta','Filtro de aceite','Filtro de aire','Filtro de combustible','Retenedor','Bushing','Batería','Banda','Rodamiento/Balero','Otro'];
+const CATEGORIAS_BASE=['Llanta','Filtro de aceite','Filtro de aire','Filtro de combustible','Retenedor','Bushing','Batería','Banda','Rodamiento/Balero','Otro'];
+function getCategorias(){ return [...new Set([...CATEGORIAS_BASE,...(config.categoriasRepuesto||[])])].sort((a,b)=>a==='Otro'?1:b==='Otro'?-1:a.localeCompare(b)); }
 
 window.cambiarTipoUnidad=function(){
   const t=document.getElementById('u-tipo').value;
@@ -1163,6 +1165,25 @@ window._unidadAbierta=null;
 window.toggleUnidad=function(id){
   window._unidadAbierta = window._unidadAbierta===id ? null : id;
   renderUnidades();
+}
+
+window.agregarCategoriaRepuesto=async function(unidadId){
+  const input=document.getElementById('rp-nueva-cat-'+unidadId);
+  const nombre=input.value.trim();
+  if(!nombre){ toast('Escribe el nombre de la nueva categoría',false); return; }
+  if(getCategorias().includes(nombre)){ toast('Esa categoría ya existe',false); return; }
+  config.categoriasRepuesto=[...(config.categoriasRepuesto||[]),nombre];
+  await saveConfig();
+  toast('Categoría "'+nombre+'" guardada');
+  // Actualizar el selector y seleccionar la nueva categoría
+  const sel=document.getElementById('rp-cat-'+unidadId);
+  const opt=document.createElement('option');
+  opt.value=nombre; opt.textContent=nombre; opt.selected=true;
+  sel.insertBefore(opt, sel.querySelector('option[value="__nueva__"]'));
+  sel.value=nombre;
+  input.value='';
+  input.style.display='none';
+  document.getElementById('btn-nueva-cat-'+unidadId).style.display='none';
 }
 
 window.guardarRepuesto=async function(unidadId){
@@ -1215,7 +1236,16 @@ function renderUnidades(){
   cont.innerHTML=unidades.map(u=>{
     const abierta=window._unidadAbierta===u.id;
     const repuestos=u.repuestos||[];
-    const filasRepuestos=repuestos.length ? repuestos.map((r,i)=>`
+    const filasRepuestos=repuestos.length ? repuestos.map((r,i)=>{
+      const textoRepuesto=[
+        `🚚 Unidad: ${u.identificador}${u.descripcion?' — '+u.descripcion:''}`,
+        `🔧 Categoría: ${r.categoria}`,
+        r.especificacion ? `📐 Especificación: ${r.especificacion}` : '',
+        r.numeroParte   ? `🔢 N° parte: ${r.numeroParte}` : '',
+        r.marca         ? `🏷️ Marca: ${r.marca}` : '',
+        r.notas         ? `📝 Notas: ${r.notas}` : '',
+      ].filter(Boolean).join('\n');
+      return `
       <div class="config-item">
         <span>
           <span class="placa-tag" style="margin-right:6px">${r.categoria}</span>
@@ -1224,11 +1254,15 @@ function renderUnidades(){
           ${r.marca?` · ${r.marca}`:''}
           ${r.notas?`<br><span style="font-size:11px;color:var(--muted)">${r.notas}</span>`:''}
         </span>
-        <button class="btn btn-danger btn-sm" id="btn-borrar-rp-${u.id}-${i}" onclick="borrarRepuesto('${u.id}',${i})">✕</button>
-      </div>`).join('')
+        <div style="display:flex;gap:6px;align-items:center">
+          <button class="btn btn-export btn-sm" title="Copiar para chat" onclick="navigator.clipboard.writeText(${JSON.stringify(textoRepuesto)}).then(()=>toast('Copiado al portapapeles')).catch(()=>toast('Error al copiar',false))">📋</button>
+          <button class="btn btn-danger btn-sm" id="btn-borrar-rp-${u.id}-${i}" onclick="borrarRepuesto('${u.id}',${i})">✕</button>
+        </div>
+      </div>`;
+    }).join('')
       : `<p style="font-size:13px;color:var(--muted);padding:8px 0">Sin repuestos registrados todavía.</p>`;
 
-    const opcionesCat=CATEGORIAS_REPUESTO.map(c=>`<option value="${c}">${c}</option>`).join('');
+    const opcionesCat=getCategorias().map(c=>`<option value="${c}">${c}</option>`).join('')+'<option value="__nueva__">＋ Nueva categoría...</option>';
 
     return `
     <div class="card">
@@ -1241,7 +1275,11 @@ function renderUnidades(){
         ${filasRepuestos}
         <div class="section-label" style="margin-top:14px">Agregar repuesto</div>
         <div class="form-grid">
-          <div class="field"><label>Categoría</label><select id="rp-cat-${u.id}">${opcionesCat}</select></div>
+          <div class="field"><label>Categoría</label>
+            <select id="rp-cat-${u.id}" onchange="(function(s,uid){var nueva=s.value==='__nueva__';document.getElementById('rp-nueva-cat-'+uid).style.display=nueva?'':'none';document.getElementById('btn-nueva-cat-'+uid).style.display=nueva?'':'none';if(nueva)document.getElementById('rp-nueva-cat-'+uid).focus();})(this,'${u.id}')">${opcionesCat}</select>
+            <input type="text" id="rp-nueva-cat-${u.id}" placeholder="Nombre de la nueva categoría" style="display:none;margin-top:6px" onkeydown="if(event.key==='Enter')agregarCategoriaRepuesto('${u.id}')"/>
+            <button class="btn btn-sm" id="btn-nueva-cat-${u.id}" style="display:none;margin-top:4px;background:var(--accent);color:#0f1923;font-family:'Barlow Condensed',sans-serif;font-weight:700" onclick="agregarCategoriaRepuesto('${u.id}')">Guardar categoría</button>
+          </div>
           <div class="field"><label>Especificación / medida</label><input type="text" id="rp-esp-${u.id}" placeholder="Ej. 11R22.5"/></div>
           <div class="field"><label>Número de parte</label><input type="text" id="rp-num-${u.id}" placeholder="Ej. P553000"/></div>
           <div class="field"><label>Marca</label><input type="text" id="rp-marca-${u.id}" placeholder="Ej. Fleetguard"/></div>
