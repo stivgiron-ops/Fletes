@@ -425,6 +425,7 @@ window.toggleUnidad = _defer('toggleUnidad');
 window.guardarRepuesto = _defer('guardarRepuesto');
 window.borrarRepuesto = _defer('borrarRepuesto');
 window.agregarCategoriaRepuesto = _defer('agregarCategoriaRepuesto');
+window.copiarRepuesto = _defer('copiarRepuesto');
 window.cambiarTipoUnidad = _defer('cambiarTipoUnidad');
 window.iniciarSesion = _defer('iniciarSesion');
 window.cerrarSesion = _defer('cerrarSesion');
@@ -1167,6 +1168,24 @@ window.toggleUnidad=function(id){
   renderUnidades();
 }
 
+window.copiarRepuesto=function(unidadId, idx){
+  const u=unidades.find(x=>x.id===unidadId);
+  if(!u)return;
+  const r=(u.repuestos||[])[idx];
+  if(!r)return;
+  const texto=[
+    `🚚 Unidad: ${u.identificador}${u.descripcion?' — '+u.descripcion:''}`,
+    `🔧 Categoría: ${r.categoria}`,
+    r.especificacion ? `📐 Especificación: ${r.especificacion}` : '',
+    r.numeroParte    ? `🔢 N° parte: ${r.numeroParte}` : '',
+    r.marca          ? `🏷️ Marca: ${r.marca}` : '',
+    r.notas          ? `📝 Notas: ${r.notas}` : '',
+  ].filter(Boolean).join('\n');
+  navigator.clipboard.writeText(texto)
+    .then(()=>toast('Copiado al portapapeles'))
+    .catch(()=>toast('Error al copiar',false));
+}
+
 window.agregarCategoriaRepuesto=async function(unidadId){
   const input=document.getElementById('rp-nueva-cat-'+unidadId);
   const nombre=input.value.trim();
@@ -1255,7 +1274,7 @@ function renderUnidades(){
           ${r.notas?`<br><span style="font-size:11px;color:var(--muted)">${r.notas}</span>`:''}
         </span>
         <div style="display:flex;gap:6px;align-items:center">
-          <button class="btn btn-export btn-sm" title="Copiar para chat" onclick="navigator.clipboard.writeText(${JSON.stringify(textoRepuesto)}).then(()=>toast('Copiado al portapapeles')).catch(()=>toast('Error al copiar',false))">📋</button>
+          <button class="btn btn-export btn-sm" title="Copiar para chat" onclick="copiarRepuesto('${u.id}',${i})">📋</button>
           <button class="btn btn-danger btn-sm" id="btn-borrar-rp-${u.id}-${i}" onclick="borrarRepuesto('${u.id}',${i})">✕</button>
         </div>
       </div>`;
