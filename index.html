@@ -74,6 +74,39 @@ tr:hover td{background:rgba(59,158,255,.04)}
 .tp-item{text-align:center}
 .tp-val{font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:700;color:var(--success)}
 .tp-lbl{font-size:11px;color:var(--muted)}
+
+/* ── Unidades — Estilo B (claro/profesional) ── */
+#page-unidades,#page-kilometraje{background:#f0f4f8}
+#page-unidades .card,#page-kilometraje .card{background:#fff;border:1px solid #e2e8f0;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+#page-unidades .card-title{color:#1e40af;font-family:'Inter',sans-serif;font-size:17px;font-weight:700}
+#page-unidades .field label{color:#64748b}
+#page-unidades .field input,#page-unidades .field select{background:#f8fafc;border:1px solid #e2e8f0;color:#1e293b}
+#page-unidades .field input:focus,#page-unidades .field select:focus{border-color:#2563eb}
+/* Header de cada unidad */
+.unidad-card{background:#fff;border:1px solid #e2e8f0;border-radius:12px;margin-bottom:14px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+.unidad-card-header{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-left:4px solid #2563eb;cursor:pointer;transition:background .15s}
+.unidad-card-header:hover{background:#f8fafc}
+.unidad-card-header.alerta-header{border-left-color:#ef4444}
+.unidad-card-header.prox-header{border-left-color:#f59e0b}
+.unidad-card-body{padding:16px;border-top:1px solid #f1f5f9}
+.unidad-placa-b{font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:700;color:#1e40af;letter-spacing:1px}
+.unidad-modelo-b{font-size:12px;color:#94a3b8;margin-top:2px;font-family:'Inter',sans-serif}
+.unidad-badge-b{background:#eff6ff;border-radius:20px;padding:4px 12px;font-size:12px;color:#2563eb;font-weight:600;border:1px solid #bfdbfe;font-family:'Inter',sans-serif;white-space:nowrap}
+.unidad-badge-b.rojo{background:#fff1f2;color:#ef4444;border-color:#fecdd3}
+.unidad-badge-b.naranja{background:#fff7ed;color:#f59e0b;border-color:#fed7aa}
+/* Repuestos */
+.rep-item-b{display:flex;align-items:flex-start;justify-content:space-between;padding:10px 14px;background:#f8fafc;border-radius:8px;margin-bottom:8px;border:1px solid #e2e8f0;gap:10px}
+.rep-cat-b{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#2563eb;margin-bottom:3px;font-family:'Inter',sans-serif}
+.rep-nombre-b{font-size:13px;font-weight:600;color:#1e293b;font-family:'Inter',sans-serif}
+.rep-detalle-b{font-size:11px;color:#94a3b8;margin-top:2px;font-family:'Inter',sans-serif}
+/* Barra km */
+.km-bar-bg-b{background:#f1f5f9;border-radius:6px;height:8px;overflow:hidden;margin:10px 0 4px;border:1px solid #e2e8f0}
+.km-bar-b{height:100%;border-radius:6px;transition:width .4s}
+.km-stat-b{flex:1;background:#fff;border-radius:8px;padding:10px;text-align:center;border:1px solid #e2e8f0;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+.km-stat-val-b{font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:700;color:#1e293b}
+.km-stat-lbl-b{font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;margin-top:2px;font-family:'Inter',sans-serif}
+.section-label-b{font-family:'Inter',sans-serif;font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.8px;margin:14px 0 10px;padding-bottom:6px;border-bottom:1px solid #e2e8f0}
+.alerta-b{background:#fff7ed;border:1px solid #f97316;border-radius:8px;padding:8px 14px;font-size:12px;color:#c2410c;display:flex;align-items:center;gap:6px;margin-bottom:12px;font-family:'Inter',sans-serif}
 </style>
 </head>
 <body>
@@ -1255,56 +1288,66 @@ function renderUnidades(){
   cont.innerHTML=unidades.map(u=>{
     const abierta=window._unidadAbierta===u.id;
     const repuestos=u.repuestos||[];
-    const filasRepuestos=repuestos.length ? repuestos.map((r,i)=>{
-      const textoRepuesto=[
-        `🚚 Unidad: ${u.identificador}${u.descripcion?' — '+u.descripcion:''}`,
-        `🔧 Categoría: ${r.categoria}`,
-        r.especificacion ? `📐 Especificación: ${r.especificacion}` : '',
-        r.numeroParte   ? `🔢 N° parte: ${r.numeroParte}` : '',
-        r.marca         ? `🏷️ Marca: ${r.marca}` : '',
-        r.notas         ? `📝 Notas: ${r.notas}` : '',
-      ].filter(Boolean).join('\n');
-      return `
-      <div class="config-item">
-        <span>
-          <span class="placa-tag" style="margin-right:6px">${r.categoria}</span>
-          <strong>${r.especificacion||''}</strong>
-          ${r.numeroParte?` · N° parte: <span style="font-family:monospace;color:var(--accent2)">${r.numeroParte}</span>`:''}
-          ${r.marca?` · ${r.marca}`:''}
-          ${r.notas?`<br><span style="font-size:11px;color:var(--muted)">${r.notas}</span>`:''}
-        </span>
-        <button class="btn btn-danger btn-sm" id="btn-borrar-rp-${u.id}-${i}" onclick="borrarRepuesto('${u.id}',${i})">✕</button>
-      </div>`;
-    }).join('')
-      : `<p style="font-size:13px;color:var(--muted);padding:8px 0">Sin repuestos registrados todavía.</p>`;
+    const km=u.kmAcumulado||0;
+    const estadoKm=km>=KM_ALERTA?'rojo':km>=KM_ALERTA*0.8?'naranja':'';
+    const headerClass='unidad-card-header'+(estadoKm==='rojo'?' alerta-header':estadoKm==='naranja'?' prox-header':'');
+
+    const filasRepuestos=repuestos.length ? repuestos.map((r,i)=>`
+      <div class="rep-item-b">
+        <div>
+          <div class="rep-cat-b">${r.categoria}</div>
+          <div class="rep-nombre-b">${r.especificacion||''}</div>
+          <div class="rep-detalle-b">
+            ${r.numeroParte?`N° parte: <strong>${r.numeroParte}</strong>`:''}
+            ${r.numeroParte&&r.marca?' · ':''}
+            ${r.marca||''}
+            ${r.notas?`<br>${r.notas}`:''}
+          </div>
+        </div>
+        <button class="btn btn-danger btn-sm" id="btn-borrar-rp-${u.id}-${i}" onclick="borrarRepuesto('${u.id}',${i})" style="flex-shrink:0">✕</button>
+      </div>`).join('')
+      : `<p style="font-size:13px;color:#94a3b8;padding:8px 0;font-family:'Inter',sans-serif">Sin repuestos registrados todavía.</p>`;
 
     const opcionesCat=getCategorias().map(c=>`<option value="${c}">${c}</option>`).join('')+'<option value="__nueva__">＋ Nueva categoría...</option>';
 
     return `
-    <div class="card">
-      <div class="card-title" style="display:flex;justify-content:space-between;align-items:center;cursor:pointer" onclick="toggleUnidad('${u.id}')">
-        <span>${u.tipo==='camion'?'🚚':'🔧'} ${u.identificador} ${u.descripcion?`<span style="font-size:13px;color:var(--muted);font-weight:400">— ${u.descripcion}</span>`:''}</span>
-        <span style="font-size:13px;color:var(--muted)">${abierta?'▲':'▼'} ${repuestos.length} repuesto${repuestos.length===1?'':'s'}</span>
+    <div class="unidad-card">
+      <div class="${headerClass}" onclick="toggleUnidad('${u.id}')">
+        <div style="display:flex;align-items:center;gap:10px">
+          <span style="font-size:20px">${u.tipo==='camion'?'🚚':'🔧'}</span>
+          <div>
+            <div class="unidad-placa-b">${u.identificador}</div>
+            ${u.descripcion?`<div class="unidad-modelo-b">${u.descripcion}</div>`:''}
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px">
+          ${km>0?`<span class="unidad-badge-b ${estadoKm}">${N(km)} km</span>`:''}
+          <span class="unidad-badge-b">${repuestos.length} repuesto${repuestos.length===1?'':'s'}</span>
+          <span style="color:#94a3b8;font-size:14px">${abierta?'▲':'▼'}</span>
+        </div>
       </div>
       ${abierta?`
-        <div class="section-label">Repuestos registrados</div>
+      <div class="unidad-card-body">
+        ${km>=KM_ALERTA?`<div class="alerta-b">⚠️ <strong>Requiere mantenimiento</strong> — ${N(km)} km acumulados</div>`:''}
+        <div class="section-label-b">Repuestos registrados</div>
         ${filasRepuestos}
-        <div class="section-label" style="margin-top:14px">Agregar repuesto</div>
+        <div class="section-label-b" style="margin-top:16px">Agregar repuesto</div>
         <div class="form-grid">
           <div class="field"><label>Categoría</label>
             <select id="rp-cat-${u.id}" onchange="(function(s,uid){var nueva=s.value==='__nueva__';document.getElementById('rp-nueva-cat-'+uid).style.display=nueva?'':'none';document.getElementById('btn-nueva-cat-'+uid).style.display=nueva?'':'none';if(nueva)document.getElementById('rp-nueva-cat-'+uid).focus();})(this,'${u.id}')">${opcionesCat}</select>
             <input type="text" id="rp-nueva-cat-${u.id}" placeholder="Nombre de la nueva categoría" style="display:none;margin-top:6px" onkeydown="if(event.key==='Enter')agregarCategoriaRepuesto('${u.id}')"/>
-            <button class="btn btn-sm" id="btn-nueva-cat-${u.id}" style="display:none;margin-top:4px;background:var(--accent);color:#0f1923;font-family:'Barlow Condensed',sans-serif;font-weight:700" onclick="agregarCategoriaRepuesto('${u.id}')">Guardar categoría</button>
+            <button class="btn btn-sm" id="btn-nueva-cat-${u.id}" style="display:none;margin-top:4px;background:#2563eb;color:#fff;font-family:'Inter',sans-serif;font-weight:600" onclick="agregarCategoriaRepuesto('${u.id}')">Guardar categoría</button>
           </div>
           <div class="field"><label>Especificación / medida</label><input type="text" id="rp-esp-${u.id}" placeholder="Ej. 11R22.5"/></div>
           <div class="field"><label>Número de parte</label><input type="text" id="rp-num-${u.id}" placeholder="Ej. P553000"/></div>
           <div class="field"><label>Marca</label><input type="text" id="rp-marca-${u.id}" placeholder="Ej. Fleetguard"/></div>
         </div>
         <div class="field" style="margin-top:8px"><label>Notas</label><input type="text" id="rp-notas-${u.id}" placeholder="Ej. eje delantero, cambiar cada 6 meses"/></div>
-        <div style="display:flex;gap:8px;margin-top:10px">
-          <button class="btn btn-sm" style="background:var(--accent);color:#0f1923;font-family:'Barlow Condensed',sans-serif;font-weight:700" onclick="guardarRepuesto('${u.id}')">Agregar repuesto</button>
+        <div style="display:flex;gap:8px;margin-top:12px">
+          <button class="btn btn-sm" style="background:#2563eb;color:#fff;font-family:'Inter',sans-serif;font-weight:600" onclick="guardarRepuesto('${u.id}')">Agregar repuesto</button>
           <button id="btn-borrar-unidad-${u.id}" class="btn btn-danger btn-sm" onclick="borrarUnidad('${u.id}')">Borrar unidad</button>
         </div>
+      </div>
       `:''}
     </div>`;
   }).join('');
