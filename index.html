@@ -611,9 +611,9 @@ function iniciarApp(){
 
   document.getElementById('f-fecha').value=new Date().toISOString().slice(0,10);
   const hoyStr=new Date().toISOString().slice(0,10);
-  const primerDia=hoyStr.slice(0,7)+'-01';
-  document.getElementById('fil-desde').value=primerDia;
-  document.getElementById('fil-hasta').value=hoyStr;
+  // Sin prefiltro de fechas — mostrar todos los viajes por defecto
+  document.getElementById('fil-desde').value='';
+  document.getElementById('fil-hasta').value='';
   setSyncStatus('loading','Conectando...');
   populateSelects();
   loadConfig();
