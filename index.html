@@ -658,6 +658,8 @@ function FD(f){ if(!f)return ''; const[y,m,d]=f.split('-'); return d+'/'+m+'/'+y
 // showPage ya está definido en el script principal arriba
 // Exponemos renderTabla/renderStats/renderConfig para que showPage pueda llamarlos
 window._renderTabla  = function(){ renderTabla(); };
+window.renderTabla   = function(){ renderTabla(); };
+window.renderStats   = function(){ renderStats(); };
 window._renderStats  = function(){ renderStats(); };
 window._renderConfig = function(){ renderConfig(); };
 window._firebaseReady = true;
