@@ -125,26 +125,40 @@ tr:hover td{background:#f8fafc}
 .alerta-b{background:#fff7ed;border:1px solid #f97316;border-radius:8px;padding:8px 14px;font-size:12px;color:#c2410c;display:flex;align-items:center;gap:6px;margin-bottom:12px;font-family:'Inter',sans-serif}
 /* ── Detalle de unidad ── */
 .det-header{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:18px 16px;margin-bottom:14px;display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap}
-.det-placa{font-family:'Barlow Condensed',sans-serif;font-size:28px;font-weight:700;color:var(--accent);letter-spacing:2px;line-height:1}
-.det-marca{font-size:13px;font-weight:600;color:var(--text);margin-top:4px}
-.det-meta{display:flex;flex-wrap:wrap;gap:10px;margin-top:8px}
-.det-meta-item{font-size:12px;color:var(--muted);font-family:'Inter',sans-serif;display:flex;align-items:center;gap:4px}
-.det-meta-item strong{color:var(--text)}
+.det-placa{font-family:'Barlow Condensed',sans-serif;font-size:32px;font-weight:700;color:var(--accent);letter-spacing:2px;line-height:1}
+.det-marca{font-size:15px;font-weight:700;color:var(--text);margin-top:3px;font-family:'Inter',sans-serif;text-transform:uppercase;letter-spacing:.5px}
+.det-meta{display:flex;flex-wrap:wrap;gap:16px;margin-top:10px}
+.det-meta-item{font-size:12px;color:var(--muted);font-family:'Inter',sans-serif;display:flex;align-items:center;gap:5px}
+.det-meta-item svg{flex-shrink:0;opacity:.6}
+.det-meta-item strong{color:var(--text);font-weight:600}
 .det-badge-count{background:var(--accent);color:#fff;border-radius:20px;padding:5px 14px;font-size:13px;font-weight:600;font-family:'Inter',sans-serif;white-space:nowrap;align-self:flex-start}
 .det-back{display:inline-flex;align-items:center;gap:6px;font-size:14px;font-weight:600;color:var(--accent);cursor:pointer;padding:8px 0;font-family:'Inter',sans-serif;background:none;border:none;margin-bottom:8px}
 .det-back:hover{text-decoration:underline}
 .det-table{width:100%;border-collapse:collapse;font-size:13px}
-.det-table th{font-family:'Inter',sans-serif;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;padding:10px 10px;border-bottom:2px solid var(--border);text-align:left;background:var(--surface);white-space:nowrap}
-.det-table td{padding:10px 10px;border-bottom:1px solid var(--border);vertical-align:middle;color:var(--text)}
+.det-table th{font-family:'Inter',sans-serif;font-size:11px;font-weight:700;color:#fff;text-transform:uppercase;letter-spacing:.5px;padding:11px 12px;border-bottom:none;text-align:left;background:#1e3a5f;white-space:nowrap}
+.det-table th:first-child{border-radius:8px 0 0 0}
+.det-table th:last-child{border-radius:0 8px 0 0}
+.det-table td{padding:11px 12px;border-bottom:1px solid var(--border);vertical-align:middle;color:var(--text);font-family:'Inter',sans-serif}
 .det-table tr:last-child td{border-bottom:none}
 .det-table tr:hover td{background:rgba(37,99,235,.03)}
-.det-cat-badge{display:inline-block;padding:2px 10px;border-radius:12px;font-size:11px;font-weight:600;background:rgba(37,99,235,.1);color:var(--accent);font-family:'Inter',sans-serif;white-space:nowrap}
-.det-spec{font-family:monospace;font-size:13px;font-weight:700;color:var(--accent2)}
+.det-cat-wrap{display:flex;align-items:center;gap:8px}
+.det-cat-icon{width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0}
+.det-cat-name{font-size:13px;font-weight:600;color:var(--text);font-family:'Inter',sans-serif}
+.det-spec{font-family:'Inter',sans-serif;font-size:13px;font-weight:500;color:var(--text)}
 .det-foto-thumb{width:44px;height:44px;object-fit:cover;border-radius:6px;border:1px solid var(--border);cursor:pointer;transition:transform .15s}
 .det-foto-thumb:hover{transform:scale(1.08)}
 .det-search{flex:1;min-width:160px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font-size:14px;outline:none;font-family:'Inter',sans-serif}
 .det-search:focus{border-color:var(--accent)}
 .det-filter-cat{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:9px 10px;color:var(--text);font-size:13px;outline:none;font-family:'Inter',sans-serif}
+/* menú 3 puntos */
+.dot-menu-wrap{position:relative;display:inline-block}
+.dot-menu-btn{background:none;border:1px solid var(--border);border-radius:6px;padding:4px 10px;cursor:pointer;font-size:18px;color:var(--muted);line-height:1;transition:background .15s}
+.dot-menu-btn:hover{background:var(--surface)}
+.dot-menu-dropdown{display:none;position:absolute;right:0;top:calc(100% + 4px);background:var(--card);border:1px solid var(--border);border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,.12);z-index:200;min-width:130px;overflow:hidden}
+.dot-menu-dropdown.open{display:block}
+.dot-menu-item{display:flex;align-items:center;gap:8px;padding:10px 14px;font-size:13px;font-family:'Inter',sans-serif;cursor:pointer;color:var(--text);border:none;background:none;width:100%;text-align:left;transition:background .1s}
+.dot-menu-item:hover{background:var(--surface)}
+.dot-menu-item.danger{color:var(--danger)}
 /* lista de unidades compacta */
 .u-list-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px 16px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;transition:background .15s;box-shadow:0 1px 3px rgba(0,0,0,.04)}
 .u-list-card:hover{background:var(--surface)}
@@ -1619,27 +1633,48 @@ window.toggleFormNuevaUnidad=function(){
   f.classList.toggle('open');
 }
 
+// Mapa de íconos y colores por categoría
+const CAT_ICONS={
+  'Llanta':             {emoji:'🛞', bg:'#dbeafe', dark:'#1e3a5f'},
+  'Filtro de aceite':   {emoji:'🛢️', bg:'#fef9c3', dark:'#713f12'},
+  'Filtro de aire':     {emoji:'💨', bg:'#e0f2fe', dark:'#0c4a6e'},
+  'Filtro de combustible':{emoji:'⛽', bg:'#fee2e2', dark:'#7f1d1d'},
+  'Retenedor':          {emoji:'🔵', bg:'#ede9fe', dark:'#4c1d95'},
+  'Bushing':            {emoji:'⚙️', bg:'#f1f5f9', dark:'#334155'},
+  'Batería':            {emoji:'🔋', bg:'#dcfce7', dark:'#14532d'},
+  'Banda':              {emoji:'🔗', bg:'#fff7ed', dark:'#7c2d12'},
+  'Rodamiento/Balero':  {emoji:'⭕', bg:'#fce7f3', dark:'#831843'},
+  'Otro':               {emoji:'🔩', bg:'#f8fafc', dark:'#475569'},
+};
+function getCatIcon(cat){
+  if(!cat) return {emoji:'🔩',bg:'#f8fafc',dark:'#475569'};
+  // buscar exacto primero, luego parcial
+  if(CAT_ICONS[cat]) return CAT_ICONS[cat];
+  const key=Object.keys(CAT_ICONS).find(k=>cat.toLowerCase().includes(k.toLowerCase().split(' ')[0]));
+  return key ? CAT_ICONS[key] : {emoji:'🔩',bg:'#f8fafc',dark:'#475569'};
+}
+
 // Renderiza el encabezado y la tabla de repuestos del detalle
 function renderDetalleUnidad(u){
-  // Encabezado
   const km=u.kmAcumulado||0;
   const estadoKm=km>=KM_ALERTA?'rojo':km>=KM_ALERTA*0.8?'naranja':'';
   const enc=document.getElementById('det-encabezado');
   enc.innerHTML=`
     <div style="flex:1">
-      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-        <span style="font-size:26px">${u.tipo==='camion'?'🚚':'🔧'}</span>
+      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+        <div style="background:var(--accent);border-radius:12px;width:52px;height:52px;display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0">${u.tipo==='camion'?'🚚':'🔧'}</div>
         <div>
           <div class="det-placa">${u.identificador}</div>
           ${u.marcaUnidad?`<div class="det-marca">${u.marcaUnidad}</div>`:''}
         </div>
       </div>
+      ${(u.modeloUnidad||u.lineaUnidad||u.serieUnidad||km>0)?`
       <div class="det-meta">
-        ${u.modeloUnidad?`<span class="det-meta-item">📅 Modelo: <strong>${u.modeloUnidad}</strong></span>`:''}
-        ${u.lineaUnidad?`<span class="det-meta-item">⚙️ Línea: <strong>${u.lineaUnidad}</strong></span>`:''}
-        ${u.serieUnidad?`<span class="det-meta-item">🔢 Serie: <strong style="font-family:monospace">${u.serieUnidad}</strong></span>`:''}
-        ${km>0?`<span class="det-meta-item">📍 <strong style="color:${estadoKm==='rojo'?'var(--danger)':estadoKm==='naranja'?'var(--warning)':'var(--success)'}">${N(km)} km</strong></span>`:''}
-      </div>
+        ${u.modeloUnidad?`<span class="det-meta-item"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> Modelo: <strong>${u.modeloUnidad}</strong></span>`:''}
+        ${u.lineaUnidad?`<span class="det-meta-item"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg> Línea: <strong>${u.lineaUnidad}</strong></span>`:''}
+        ${u.serieUnidad?`<span class="det-meta-item"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg> Serie: <strong style="font-family:monospace">${u.serieUnidad}</strong></span>`:''}
+        ${km>0?`<span class="det-meta-item"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> <strong style="color:${estadoKm==='rojo'?'var(--danger)':estadoKm==='naranja'?'var(--warning)':'var(--success)'}">${N(km)} km</strong></span>`:''}
+      </div>`:''}
     </div>
     <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px">
       <span class="det-badge-count">${(u.repuestos||[]).length} repuestos</span>
@@ -1671,9 +1706,7 @@ function renderDetalleUnidad(u){
       document.getElementById('det-rp-marca').value=r.marca||'';
       document.getElementById('det-rp-notas').value=r.notas||'';
       const fotos=[...(r.fotos||[])];if(!fotos.length&&r.fotoUrl)fotos.push(r.fotoUrl);
-      if(fotos.length){
-        document.getElementById('det-rp-foto-estado').textContent=`Ya tiene ${fotos.length} foto(s). Selecciona más para agregar, o deja vacío para conservar.`;
-      }
+      if(fotos.length) document.getElementById('det-rp-foto-estado').textContent=`Ya tiene ${fotos.length} foto(s). Selecciona más para agregar, o deja vacío para conservar.`;
     }
   } else {
     document.getElementById('det-form-titulo').textContent='＋ Agregar repuesto';
@@ -1689,7 +1722,8 @@ window.filtrarTablaDetalle=function(uParam){
   if(!u)return;
   const buscar=(document.getElementById('det-buscar').value||'').toLowerCase();
   const catFil=(document.getElementById('det-filtro-cat').value||'');
-  const repuestos=(u.repuestos||[]).filter((r,_i)=>{
+  const todos=(u.repuestos||[]);
+  const filtrados=todos.filter(r=>{
     if(catFil && r.categoria!==catFil) return false;
     if(buscar){
       const haystack=[r.categoria,r.especificacion,r.numeroParte,r.marca,r.notas].filter(Boolean).join(' ').toLowerCase();
@@ -1699,38 +1733,58 @@ window.filtrarTablaDetalle=function(uParam){
   });
   const tbody=document.getElementById('det-tbody');
   const empty=document.getElementById('det-empty');
-  if(!repuestos.length){
-    tbody.innerHTML='';
-    empty.style.display='block';
-    return;
-  }
+  if(!filtrados.length){ tbody.innerHTML=''; empty.style.display='block'; return; }
   empty.style.display='none';
-  tbody.innerHTML=(u.repuestos||[]).map((r,i)=>{
-    // Verificar si pasa el filtro
+  tbody.innerHTML=todos.map((r,i)=>{
     if(catFil && r.categoria!==catFil) return '';
     if(buscar){
       const haystack=[r.categoria,r.especificacion,r.numeroParte,r.marca,r.notas].filter(Boolean).join(' ').toLowerCase();
       if(!haystack.includes(buscar)) return '';
     }
+    const icon=getCatIcon(r.categoria);
     const fotos=[...(r.fotos||[])];if(!fotos.length&&r.fotoUrl)fotos.push(r.fotoUrl);
     const fotasHtml=fotos.length
       ? fotos.map(url=>`<img class="det-foto-thumb" src="${url}" onclick="window.open('${url}','_blank')" title="Ver foto completa"/>`).join('')
-      : '—';
+      : '';
     return `<tr>
-      <td><span class="det-cat-badge">${r.categoria||'—'}</span></td>
-      <td><span class="det-spec">${r.especificacion||'—'}</span>${r.notas?`<br><span style="font-size:11px;color:var(--muted)">${r.notas}</span>`:''}</td>
-      <td style="font-family:monospace;font-size:12px">${r.numeroParte||'—'}</td>
-      <td style="font-size:13px">${r.marca||'—'}</td>
+      <td>
+        <div class="det-cat-wrap">
+          <div class="det-cat-icon" style="background:${icon.bg}">${icon.emoji}</div>
+          <div class="det-cat-name">${r.categoria||''}</div>
+        </div>
+      </td>
+      <td>
+        <div class="det-spec">${r.especificacion||''}</div>
+        ${r.notas?`<div style="font-size:11px;color:var(--muted);margin-top:2px">${r.notas}</div>`:''}
+      </td>
+      <td style="font-family:monospace;font-size:12px">${r.numeroParte||''}</td>
+      <td style="font-size:13px">${r.marca||''}</td>
       <td style="white-space:nowrap">${fotasHtml}</td>
       <td>
-        <div style="display:flex;gap:6px">
-          <button class="btn btn-sm" onclick="editarRepuestoDetalle(${i})" style="background:var(--accent);color:#fff;border:none">✎</button>
-          <button class="btn btn-danger btn-sm" id="btn-borrar-rp-det-${i}" onclick="borrarRepuesto('${u.id}',${i})">✕</button>
+        <div class="dot-menu-wrap">
+          <button class="dot-menu-btn" onclick="toggleDotMenu(event,'dot-${u.id}-${i}')">⋮</button>
+          <div class="dot-menu-dropdown" id="dot-${u.id}-${i}">
+            <button class="dot-menu-item" onclick="closeDotMenus();editarRepuestoDetalle(${i})">✎ &nbsp;Editar</button>
+            <button class="dot-menu-item danger" onclick="closeDotMenus();borrarRepuesto('${u.id}',${i})">🗑 &nbsp;Eliminar</button>
+          </div>
         </div>
       </td>
     </tr>`;
   }).join('');
 }
+
+// Menú 3 puntos
+window.toggleDotMenu=function(e,id){
+  e.stopPropagation();
+  const menu=document.getElementById(id);
+  const estaAbierto=menu.classList.contains('open');
+  closeDotMenus();
+  if(!estaAbierto) menu.classList.add('open');
+}
+window.closeDotMenus=function(){
+  document.querySelectorAll('.dot-menu-dropdown.open').forEach(m=>m.classList.remove('open'));
+}
+document.addEventListener('click', window.closeDotMenus);
 
 // Editar repuesto desde el detalle
 window.editarRepuestoDetalle=function(idx){
