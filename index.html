@@ -1299,9 +1299,25 @@ window.agregarCategoriaRepuesto=async function(unidadId){
 const CLOUDINARY_CLOUD='yrqksatj';
 const CLOUDINARY_PRESET='Fletes_repuestos';
 
-async function subirFotoCloudinary(file, unidadId){
+window.previsualizarFotos=function(input, uid){
+  const files=Array.from(input.files);
+  if(!files.length)return;
+  const prev=document.getElementById('rp-foto-preview-'+uid);
+  const estado=document.getElementById('rp-foto-estado-'+uid);
+  if(!prev)return;
+  prev.style.display='block';
+  const imgs=files.map(f=>{
+    const url=URL.createObjectURL(f);
+    return '<img src="'+url+'" style="width:80px;height:80px;object-fit:cover;border-radius:6px;border:1px solid #e2e8f0"/>';
+  }).join('');
+  prev.innerHTML='<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:4px">'+imgs+'</div><p id="rp-foto-estado-'+uid+'" style="font-size:11px;color:#64748b;margin-top:4px">'+files.length+' foto(s) seleccionada(s)</p>';
+};
+
+window.previsualizarFotos=window.previsualizarFotos;
+
+async function subirFotoCloudinary(file, unidadId, idx){
   const estado=document.getElementById('rp-foto-estado-'+unidadId);
-  if(estado) estado.textContent='Subiendo foto...';
+  if(estado) estado.textContent=`Subiendo foto ${idx+1}...`;
   const fd=new FormData();
   fd.append('file', file);
   fd.append('upload_preset', CLOUDINARY_PRESET);
@@ -1309,7 +1325,6 @@ async function subirFotoCloudinary(file, unidadId){
   const r=await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/image/upload`,{method:'POST',body:fd});
   if(!r.ok) throw new Error('Error al subir la foto');
   const data=await r.json();
-  if(estado) estado.textContent='Foto subida correctamente ✓';
   return data.secure_url;
 }
 
@@ -1342,23 +1357,36 @@ window.guardarRepuesto=async function(unidadId){
 
   const editando = (window._repuestoEditando && window._repuestoEditando.unidadId===unidadId) ? window._repuestoEditando.idx : null;
 
-  // Foto: si estamos editando y no se sube una nueva, se conserva la existente
-  let fotoUrl = editando!==null ? ((u.repuestos||[])[editando]?.fotoUrl || '') : '';
+  // Fotos: partir del array existente si editamos, o vacío si es nuevo
+  let fotosExistentes = editando!==null ? ([...((u.repuestos||[])[editando]?.fotos || [])]) : [];
+  // Compatibilidad con el campo fotoUrl antiguo
+  if(editando!==null && !fotosExistentes.length && (u.repuestos||[])[editando]?.fotoUrl){
+    fotosExistentes=[(u.repuestos||[])[editando].fotoUrl];
+  }
+
   const fotoInput=document.getElementById('rp-foto-'+unidadId);
-  if(fotoInput && fotoInput.files && fotoInput.files[0]){
-    try{
-      fotoUrl=await subirFotoCloudinary(fotoInput.files[0], unidadId);
-    }catch(e){
-      toast('No se pudo subir la foto, se guardará sin ella',false);
+  const estado=document.getElementById('rp-foto-estado-'+unidadId);
+  if(fotoInput && fotoInput.files && fotoInput.files.length>0){
+    const archivos=Array.from(fotoInput.files);
+    if(estado) estado.textContent=`Subiendo ${archivos.length} foto(s)...`;
+    for(let i=0;i<archivos.length;i++){
+      try{
+        const url=await subirFotoCloudinary(archivos[i], unidadId, i);
+        fotosExistentes.push(url);
+        if(estado) estado.textContent=`Foto ${i+1}/${archivos.length} subida ✓`;
+      }catch(e){
+        toast(`No se pudo subir la foto ${i+1}`,false);
+      }
     }
+    if(estado) estado.textContent=`${fotosExistentes.length} foto(s) guardadas ✓`;
   }
 
   let repuestos;
   if(editando!==null){
     repuestos=[...(u.repuestos||[])];
-    repuestos[editando]={categoria:cat,especificacion:esp,numeroParte:num,marca,notas,fotoUrl};
+    repuestos[editando]={categoria:cat,especificacion:esp,numeroParte:num,marca,notas,fotos:fotosExistentes,fotoUrl:''};
   } else {
-    repuestos=[...(u.repuestos||[]), {categoria:cat,especificacion:esp,numeroParte:num,marca,notas,fotoUrl}];
+    repuestos=[...(u.repuestos||[]), {categoria:cat,especificacion:esp,numeroParte:num,marca,notas,fotos:fotosExistentes,fotoUrl:''}];
   }
   try{
     await updateDoc(doc(db,'unidades',unidadId), {repuestos});
@@ -1416,7 +1444,7 @@ function renderUnidades(){
             ${r.marca||''}
             ${r.notas?`<br>${r.notas}`:''}
           </div>
-          ${r.fotoUrl?`<img src="${r.fotoUrl}" onclick="window.open('${r.fotoUrl}','_blank')" style="margin-top:8px;width:100%;max-height:140px;object-fit:cover;border-radius:6px;border:1px solid var(--border);cursor:pointer" title="Ver foto completa"/>`:''}
+          ${(()=>{const fotos=[...(r.fotos||[])];if(!fotos.length&&r.fotoUrl)fotos.push(r.fotoUrl);if(!fotos.length)return '';return `<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px">${fotos.map(url=>`<img src="${url}" onclick="window.open('${url}','_blank')" style="width:72px;height:72px;object-fit:cover;border-radius:6px;border:1px solid var(--border);cursor:pointer" title="Ver foto completa"/>`).join('')}</div>`;})()}
         </div>
         <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0">
           <button class="btn btn-sm" onclick="editarRepuesto('${u.id}',${i})" style="background:var(--accent);color:#fff;border:none">✎</button>
@@ -1467,10 +1495,9 @@ function renderUnidades(){
         <div class="field" style="margin-top:8px"><label>Notas</label><input type="text" id="rp-notas-${u.id}" placeholder="Ej. eje delantero, cambiar cada 6 meses" value="${esc(editRep&&editRep.notas)}"/></div>
         <div class="field" style="margin-top:8px">
           <label>Foto del repuesto (opcional)</label>
-          ${editRep&&editRep.fotoUrl?`<p style="font-size:11px;color:var(--muted);margin-bottom:6px;font-family:'Inter',sans-serif">Ya tiene una foto guardada. Selecciona una nueva solo si quieres reemplazarla.</p>`:''}
-          <input type="file" id="rp-foto-${u.id}" accept="image/*" capture="environment" style="background:#f8fafc;border:1px solid var(--border);border-radius:8px;padding:8px;font-size:13px;color:var(--muted)" onchange="(function(input,uid){const f=input.files[0];if(!f)return;const prev=document.getElementById('rp-foto-preview-'+uid);const img=document.getElementById('rp-foto-img-'+uid);if(prev&&img){prev.style.display='block';img.src=URL.createObjectURL(f);}})(this,'${u.id}')"/>
+          ${editRep&&(editRep.fotos||[editRep.fotoUrl].filter(Boolean)).length?`<p style="font-size:11px;color:var(--muted);margin-bottom:6px;font-family:'Inter',sans-serif">Ya tiene ${(editRep.fotos||[editRep.fotoUrl].filter(Boolean)).length} foto(s). Selecciona más para agregarlas, o deja vacío para conservar las actuales.</p>`:''}
+          <input type="file" id="rp-foto-${u.id}" accept="image/*" multiple style="background:#f8fafc;border:1px solid var(--border);border-radius:8px;padding:8px;font-size:13px;color:var(--muted)" onchange="previsualizarFotos(this,'${u.id}')"/>
           <div id="rp-foto-preview-${u.id}" style="display:none;margin-top:8px">
-            <img id="rp-foto-img-${u.id}" style="width:100%;max-height:180px;object-fit:cover;border-radius:8px;border:1px solid var(--border)"/>
             <p id="rp-foto-estado-${u.id}" style="font-size:11px;color:var(--muted);margin-top:4px;font-family:'Inter',sans-serif"></p>
           </div>
         </div>
