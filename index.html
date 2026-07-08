@@ -123,6 +123,39 @@ tr:hover td{background:#f8fafc}
 .km-stat-lbl-b{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-top:2px;font-family:'Inter',sans-serif}
 .section-label-b{font-family:'Inter',sans-serif;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin:14px 0 10px;padding-bottom:6px;border-bottom:1px solid var(--border)}
 .alerta-b{background:#fff7ed;border:1px solid #f97316;border-radius:8px;padding:8px 14px;font-size:12px;color:#c2410c;display:flex;align-items:center;gap:6px;margin-bottom:12px;font-family:'Inter',sans-serif}
+/* ── Detalle de unidad ── */
+.det-header{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:18px 16px;margin-bottom:14px;display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.det-placa{font-family:'Barlow Condensed',sans-serif;font-size:28px;font-weight:700;color:var(--accent);letter-spacing:2px;line-height:1}
+.det-marca{font-size:13px;font-weight:600;color:var(--text);margin-top:4px}
+.det-meta{display:flex;flex-wrap:wrap;gap:10px;margin-top:8px}
+.det-meta-item{font-size:12px;color:var(--muted);font-family:'Inter',sans-serif;display:flex;align-items:center;gap:4px}
+.det-meta-item strong{color:var(--text)}
+.det-badge-count{background:var(--accent);color:#fff;border-radius:20px;padding:5px 14px;font-size:13px;font-weight:600;font-family:'Inter',sans-serif;white-space:nowrap;align-self:flex-start}
+.det-back{display:inline-flex;align-items:center;gap:6px;font-size:14px;font-weight:600;color:var(--accent);cursor:pointer;padding:8px 0;font-family:'Inter',sans-serif;background:none;border:none;margin-bottom:8px}
+.det-back:hover{text-decoration:underline}
+.det-table{width:100%;border-collapse:collapse;font-size:13px}
+.det-table th{font-family:'Inter',sans-serif;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;padding:10px 10px;border-bottom:2px solid var(--border);text-align:left;background:var(--surface);white-space:nowrap}
+.det-table td{padding:10px 10px;border-bottom:1px solid var(--border);vertical-align:middle;color:var(--text)}
+.det-table tr:last-child td{border-bottom:none}
+.det-table tr:hover td{background:rgba(37,99,235,.03)}
+.det-cat-badge{display:inline-block;padding:2px 10px;border-radius:12px;font-size:11px;font-weight:600;background:rgba(37,99,235,.1);color:var(--accent);font-family:'Inter',sans-serif;white-space:nowrap}
+.det-spec{font-family:monospace;font-size:13px;font-weight:700;color:var(--accent2)}
+.det-foto-thumb{width:44px;height:44px;object-fit:cover;border-radius:6px;border:1px solid var(--border);cursor:pointer;transition:transform .15s}
+.det-foto-thumb:hover{transform:scale(1.08)}
+.det-search{flex:1;min-width:160px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font-size:14px;outline:none;font-family:'Inter',sans-serif}
+.det-search:focus{border-color:var(--accent)}
+.det-filter-cat{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:9px 10px;color:var(--text);font-size:13px;outline:none;font-family:'Inter',sans-serif}
+/* lista de unidades compacta */
+.u-list-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px 16px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;transition:background .15s;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+.u-list-card:hover{background:var(--surface)}
+.u-list-placa{font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:700;color:var(--accent);letter-spacing:1px}
+.u-list-desc{font-size:12px;color:var(--muted);margin-top:2px;font-family:'Inter',sans-serif}
+.u-list-right{display:flex;align-items:center;gap:10px;flex-shrink:0}
+/* form agregar unidad inline */
+#form-nueva-unidad{display:none}
+#form-nueva-unidad.open{display:block}
+/* panel form repuesto dentro del detalle */
+.det-form-panel{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:16px}
 </style>
 </head>
 <body>
@@ -414,28 +447,124 @@ tr:hover td{background:#f8fafc}
 
 <!-- UNIDADES -->
 <div class="page" id="page-unidades">
-  <div class="card">
-    <div class="card-title">🚚 Nueva unidad</div>
-    <div class="form-grid">
-      <div class="field">
-        <label>Tipo</label>
-        <select id="u-tipo" onchange="cambiarTipoUnidad()">
-          <option value="camion">Camión (por placa)</option>
-          <option value="equipo">Equipo (por número)</option>
-        </select>
+
+  <!-- Vista A: lista de unidades -->
+  <div id="u-vista-lista">
+    <div class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:12px">
+        <div class="card-title" style="margin:0">🚚 Unidades</div>
+        <button class="btn btn-sm" style="background:var(--accent);color:#fff;font-family:'Inter',sans-serif;font-weight:600" onclick="toggleFormNuevaUnidad()">+ Nueva unidad</button>
       </div>
-      <div class="field">
-        <label id="u-id-label">Placa</label>
-        <input type="text" id="u-id" placeholder="Ej. C-123ABC" style="text-transform:uppercase"/>
-      </div>
-      <div class="field">
-        <label>Marca / modelo (opcional)</label>
-        <input type="text" id="u-desc" placeholder="Ej. Freightliner FLD120"/>
+      <div id="form-nueva-unidad">
+        <div class="form-grid">
+          <div class="field">
+            <label>Tipo</label>
+            <select id="u-tipo" onchange="cambiarTipoUnidad()">
+              <option value="camion">Camión (por placa)</option>
+              <option value="equipo">Equipo (por número)</option>
+            </select>
+          </div>
+          <div class="field">
+            <label id="u-id-label">Placa</label>
+            <input type="text" id="u-id" placeholder="Ej. C-123ABC" style="text-transform:uppercase"/>
+          </div>
+          <div class="field">
+            <label>Marca</label>
+            <input type="text" id="u-marca-reg" placeholder="Ej. International, Kenworth"/>
+          </div>
+          <div class="field">
+            <label>Modelo / año</label>
+            <input type="text" id="u-modelo-reg" placeholder="Ej. 2014"/>
+          </div>
+          <div class="field">
+            <label>Línea</label>
+            <input type="text" id="u-linea-reg" placeholder="Ej. PROSTAR+122, T680"/>
+          </div>
+          <div class="field">
+            <label>No. de serie (VIN)</label>
+            <input type="text" id="u-serie-reg" placeholder="Ej. 3HSDJAPR6EN016511" style="text-transform:uppercase"/>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+          <button class="btn btn-sm" style="background:var(--accent);color:#fff;font-family:'Inter',sans-serif;font-weight:600" onclick="guardarUnidad()">Guardar unidad</button>
+          <button class="btn btn-sm" style="background:var(--surface);border:1px solid var(--border);color:var(--text);font-family:'Inter',sans-serif" onclick="toggleFormNuevaUnidad()">Cancelar</button>
+        </div>
+        <div style="border-bottom:1px solid var(--border);margin:16px 0"></div>
       </div>
     </div>
-    <button class="btn btn-sm" style="background:var(--accent);color:#fff;font-family:'Inter',sans-serif;font-weight:600;margin-top:8px" onclick="guardarUnidad()">Agregar unidad</button>
+    <div id="lista-unidades"></div>
   </div>
-  <div id="lista-unidades"></div>
+
+  <!-- Vista B: detalle de una unidad -->
+  <div id="u-vista-detalle" style="display:none">
+    <button class="det-back" onclick="volverListaUnidades()">← Volver a Unidades</button>
+    <!-- Encabezado de la unidad -->
+    <div class="det-header" id="det-encabezado"></div>
+    <!-- Formulario agregar/editar repuesto -->
+    <div class="card" id="det-form-card">
+      <div class="card-title" id="det-form-titulo">＋ Agregar repuesto</div>
+      <div class="form-grid">
+        <div class="field">
+          <label>Categoría</label>
+          <select id="det-rp-cat" onchange="(function(s){var nueva=s.value==='__nueva__';document.getElementById('det-rp-nueva-cat').style.display=nueva?'':'none';document.getElementById('det-btn-nueva-cat').style.display=nueva?'':'none';if(nueva)document.getElementById('det-rp-nueva-cat').focus();})(this)"></select>
+          <input type="text" id="det-rp-nueva-cat" placeholder="Nombre de la nueva categoría" style="display:none;margin-top:6px" onkeydown="if(event.key==='Enter')agregarCategoriaDetalle()"/>
+          <button class="btn btn-sm" id="det-btn-nueva-cat" style="display:none;margin-top:4px;background:var(--accent);color:#fff;font-family:'Inter',sans-serif;font-weight:600" onclick="agregarCategoriaDetalle()">Guardar categoría</button>
+        </div>
+        <div class="field">
+          <label>Especificación / medida</label>
+          <input type="text" id="det-rp-esp" placeholder="Ej. 11R22.5, LF14000"/>
+        </div>
+        <div class="field">
+          <label>Número de parte / código</label>
+          <input type="text" id="det-rp-num" placeholder="Ej. P553000, 33651"/>
+        </div>
+        <div class="field">
+          <label>Marca</label>
+          <input type="text" id="det-rp-marca" placeholder="Ej. Fleetguard, Donaldson"/>
+        </div>
+        <div class="field full">
+          <label>Notas (opcional)</label>
+          <input type="text" id="det-rp-notas" placeholder="Ej. eje delantero, cambiar cada 6 meses"/>
+        </div>
+        <div class="field full">
+          <label>Foto del repuesto (opcional)</label>
+          <input type="file" id="det-rp-foto" accept="image/*" multiple style="background:#f8fafc;border:1px solid var(--border);border-radius:8px;padding:8px;font-size:13px;color:var(--muted)" onchange="previsualizarFotosDetalle(this)"/>
+          <div id="det-rp-foto-preview" style="display:none;margin-top:8px"></div>
+          <p id="det-rp-foto-estado" style="font-size:11px;color:var(--muted);margin-top:4px;font-family:'Inter',sans-serif"></p>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
+        <button class="btn btn-primary" id="det-btn-guardar-rp" style="width:auto;padding:11px 24px" onclick="guardarRepuestoDetalle()">Guardar repuesto</button>
+        <button id="det-btn-cancelar-edit" class="btn btn-sm" style="display:none;background:var(--surface);border:1px solid var(--border);color:var(--text);font-family:'Inter',sans-serif" onclick="cancelarEdicionDetalle()">Cancelar edición</button>
+      </div>
+    </div>
+    <!-- Tabla de repuestos -->
+    <div class="card">
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;align-items:center">
+        <input class="det-search" id="det-buscar" type="text" placeholder="🔍 Buscar repuesto..." oninput="filtrarTablaDetalle()"/>
+        <select class="det-filter-cat" id="det-filtro-cat" onchange="filtrarTablaDetalle()">
+          <option value="">Todas las categorías</option>
+        </select>
+      </div>
+      <div class="table-wrap">
+        <table class="det-table">
+          <thead>
+            <tr>
+              <th>Categoría</th>
+              <th>Descripción / especificación</th>
+              <th>Código / referencia</th>
+              <th>Marca</th>
+              <th>Foto</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="det-tbody"></tbody>
+        </table>
+      </div>
+      <p id="det-empty" style="display:none;text-align:center;padding:30px;color:var(--muted);font-family:'Inter',sans-serif">Sin repuestos registrados para esta unidad</p>
+    </div>
+  </div>
+
 </div>
 
 <!-- KILOMETRAJE -->
@@ -1221,13 +1350,16 @@ window.cambiarTipoUnidad=function(){
 window.guardarUnidad=async function(){
   const tipo=document.getElementById('u-tipo').value;
   const identificador=document.getElementById('u-id').value.trim().toUpperCase();
-  const descripcion=document.getElementById('u-desc').value.trim();
+  const marcaUnidad=document.getElementById('u-marca-reg').value.trim();
+  const modeloUnidad=document.getElementById('u-modelo-reg').value.trim();
+  const lineaUnidad=document.getElementById('u-linea-reg').value.trim();
+  const serieUnidad=document.getElementById('u-serie-reg').value.trim().toUpperCase();
   if(!identificador){ toast('Ingresa la placa o número',false); return; }
   if(unidades.some(u=>u.identificador===identificador)){ toast('Ya existe una unidad con ese identificador',false); return; }
   try{
-    await addDoc(unidadesCol,{tipo,identificador,descripcion,repuestos:[]});
-    document.getElementById('u-id').value='';
-    document.getElementById('u-desc').value='';
+    await addDoc(unidadesCol,{tipo,identificador,marcaUnidad,modeloUnidad,lineaUnidad,serieUnidad,repuestos:[],kmAcumulado:0});
+    ['u-id','u-marca-reg','u-modelo-reg','u-linea-reg','u-serie-reg'].forEach(id=>{document.getElementById(id).value='';});
+    document.getElementById('form-nueva-unidad').classList.remove('open');
     toast('Unidad agregada');
   }catch(e){ toast('Error: '+e.message,false); }
 }
@@ -1419,99 +1551,285 @@ window.borrarRepuesto=async function(unidadId, idx){
   toast('Toca de nuevo para confirmar el borrado',false);
 }
 
+// ── ID de la unidad actualmente en detalle ─────────────────
+window._unidadDetalleId = null;
+window._repuestoEditandoDet = null; // idx o null
+
+// Lista compacta de unidades
 function renderUnidades(){
   const cont=document.getElementById('lista-unidades');
   if(!cont)return;
+  // Si estamos en la vista detalle, re-renderizar el detalle
+  if(window._unidadDetalleId){
+    const u=unidades.find(x=>x.id===window._unidadDetalleId);
+    if(u) renderDetalleUnidad(u);
+    return;
+  }
   if(!unidades.length){
-    cont.innerHTML='<div class="card"><p class="empty" style="display:block">No hay unidades registradas aún</p></div>';
+    cont.innerHTML='<div class="card"><p class="empty" style="display:block">No hay unidades registradas aún. Tocá "+ Nueva unidad" para agregar.</p></div>';
     return;
   }
   cont.innerHTML=unidades.map(u=>{
-    const abierta=window._unidadAbierta===u.id;
     const repuestos=u.repuestos||[];
     const km=u.kmAcumulado||0;
     const estadoKm=km>=KM_ALERTA?'rojo':km>=KM_ALERTA*0.8?'naranja':'';
-    const headerClass='unidad-card-header'+(estadoKm==='rojo'?' alerta-header':estadoKm==='naranja'?' prox-header':'');
-
-    const filasRepuestos=repuestos.length ? repuestos.map((r,i)=>`
-      <div class="rep-item-b">
-        <div style="flex:1">
-          <div class="rep-cat-b">${r.categoria}</div>
-          <div class="rep-nombre-b">${r.especificacion||''}</div>
-          <div class="rep-detalle-b">
-            ${r.numeroParte?`N° parte: <strong>${r.numeroParte}</strong>`:''}
-            ${r.numeroParte&&r.marca?' · ':''}
-            ${r.marca||''}
-            ${r.notas?`<br>${r.notas}`:''}
-          </div>
-          ${(()=>{const fotos=[...(r.fotos||[])];if(!fotos.length&&r.fotoUrl)fotos.push(r.fotoUrl);if(!fotos.length)return '';return `<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px">${fotos.map(url=>`<img src="${url}" onclick="window.open('${url}','_blank')" style="width:72px;height:72px;object-fit:cover;border-radius:6px;border:1px solid var(--border);cursor:pointer" title="Ver foto completa"/>`).join('')}</div>`;})()}
-        </div>
-        <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0">
-          <button class="btn btn-sm" onclick="editarRepuesto('${u.id}',${i})" style="background:var(--accent);color:#fff;border:none">✎</button>
-          <button class="btn btn-danger btn-sm" id="btn-borrar-rp-${u.id}-${i}" onclick="borrarRepuesto('${u.id}',${i})">✕</button>
-        </div>
-      </div>`).join('')
-      : `<p style="font-size:13px;color:#94a3b8;padding:8px 0;font-family:'Inter',sans-serif">Sin repuestos registrados todavía.</p>`;
-
-    const editState = (window._repuestoEditando && window._repuestoEditando.unidadId===u.id) ? window._repuestoEditando : null;
-    const editRep = editState ? (repuestos[editState.idx]||null) : null;
-    const esc=(s)=>(s||'').toString().replace(/"/g,'&quot;');
-
-    const opcionesCat=getCategorias().map(c=>`<option value="${c}" ${editRep&&editRep.categoria===c?'selected':''}>${c}</option>`).join('')+'<option value="__nueva__">＋ Nueva categoría...</option>';
-
     return `
-    <div class="unidad-card">
-      <div class="${headerClass}" onclick="toggleUnidad('${u.id}')">
-        <div style="display:flex;align-items:center;gap:10px">
-          <span style="font-size:20px">${u.tipo==='camion'?'🚚':'🔧'}</span>
-          <div>
-            <div class="unidad-placa-b">${u.identificador}</div>
-            ${u.descripcion?`<div class="unidad-modelo-b">${u.descripcion}</div>`:''}
-          </div>
-        </div>
-        <div style="display:flex;align-items:center;gap:10px">
-          ${km>0?`<span class="unidad-badge-b ${estadoKm}">${N(km)} km</span>`:''}
-          <span class="unidad-badge-b">${repuestos.length} repuesto${repuestos.length===1?'':'s'}</span>
-          <span style="color:#94a3b8;font-size:14px">${abierta?'▲':'▼'}</span>
+    <div class="u-list-card" onclick="abrirDetalleUnidad('${u.id}')">
+      <div style="display:flex;align-items:center;gap:12px">
+        <span style="font-size:22px">${u.tipo==='camion'?'🚚':'🔧'}</span>
+        <div>
+          <div class="u-list-placa">${u.identificador}</div>
+          <div class="u-list-desc">${[u.marcaUnidad,u.modeloUnidad].filter(Boolean).join(' · ')||u.descripcion||'Sin descripción'}</div>
         </div>
       </div>
-      ${abierta?`
-      <div class="unidad-card-body">
-        ${km>=KM_ALERTA?`<div class="alerta-b">⚠️ <strong>Requiere mantenimiento</strong> — ${N(km)} km acumulados</div>`:''}
-        <div class="section-label-b">Repuestos registrados</div>
-        ${filasRepuestos}
-        <div class="section-label-b" style="margin-top:16px">${editRep?'✎ Editando repuesto':'Agregar repuesto'}</div>
-        ${editRep?`<div class="alerta-b" style="background:#eff6ff;border-color:var(--accent);color:var(--accent)">✎ Editando el repuesto de la categoría <strong>${esc(editRep.categoria)}</strong>. Modifica los campos y guarda los cambios.</div>`:''}
-        <div class="form-grid">
-          <div class="field"><label>Categoría</label>
-            <select id="rp-cat-${u.id}" onchange="(function(s,uid){var nueva=s.value==='__nueva__';document.getElementById('rp-nueva-cat-'+uid).style.display=nueva?'':'none';document.getElementById('btn-nueva-cat-'+uid).style.display=nueva?'':'none';if(nueva)document.getElementById('rp-nueva-cat-'+uid).focus();})(this,'${u.id}')">${opcionesCat}</select>
-            <input type="text" id="rp-nueva-cat-${u.id}" placeholder="Nombre de la nueva categoría" style="display:none;margin-top:6px" onkeydown="if(event.key==='Enter')agregarCategoriaRepuesto('${u.id}')"/>
-            <button class="btn btn-sm" id="btn-nueva-cat-${u.id}" style="display:none;margin-top:4px;background:#2563eb;color:#fff;font-family:'Inter',sans-serif;font-weight:600" onclick="agregarCategoriaRepuesto('${u.id}')">Guardar categoría</button>
-          </div>
-          <div class="field"><label>Especificación / medida</label><input type="text" id="rp-esp-${u.id}" placeholder="Ej. 11R22.5" value="${esc(editRep&&editRep.especificacion)}"/></div>
-          <div class="field"><label>Número de parte</label><input type="text" id="rp-num-${u.id}" placeholder="Ej. P553000" value="${esc(editRep&&editRep.numeroParte)}"/></div>
-          <div class="field"><label>Marca</label><input type="text" id="rp-marca-${u.id}" placeholder="Ej. Fleetguard" value="${esc(editRep&&editRep.marca)}"/></div>
-        </div>
-        <div class="field" style="margin-top:8px"><label>Notas</label><input type="text" id="rp-notas-${u.id}" placeholder="Ej. eje delantero, cambiar cada 6 meses" value="${esc(editRep&&editRep.notas)}"/></div>
-        <div class="field" style="margin-top:8px">
-          <label>Foto del repuesto (opcional)</label>
-          ${editRep&&(editRep.fotos||[editRep.fotoUrl].filter(Boolean)).length?`<p style="font-size:11px;color:var(--muted);margin-bottom:6px;font-family:'Inter',sans-serif">Ya tiene ${(editRep.fotos||[editRep.fotoUrl].filter(Boolean)).length} foto(s). Selecciona más para agregarlas, o deja vacío para conservar las actuales.</p>`:''}
-          <input type="file" id="rp-foto-${u.id}" accept="image/*" multiple style="background:#f8fafc;border:1px solid var(--border);border-radius:8px;padding:8px;font-size:13px;color:var(--muted)" onchange="previsualizarFotos(this,'${u.id}')"/>
-          <div id="rp-foto-preview-${u.id}" style="display:none;margin-top:8px">
-            <p id="rp-foto-estado-${u.id}" style="font-size:11px;color:var(--muted);margin-top:4px;font-family:'Inter',sans-serif"></p>
-          </div>
-        </div>
-        <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
-          <button class="btn btn-sm" style="background:#2563eb;color:#fff;font-family:'Inter',sans-serif;font-weight:600" onclick="guardarRepuesto('${u.id}')">${editRep?'Guardar cambios':'Agregar repuesto'}</button>
-          ${editRep?`<button class="btn btn-sm" style="background:var(--surface);border:1px solid var(--border);color:var(--text)" onclick="cancelarEdicionRepuesto()">Cancelar</button>`:''}
-          <button id="btn-borrar-unidad-${u.id}" class="btn btn-danger btn-sm" onclick="borrarUnidad('${u.id}')">Borrar unidad</button>
-        </div>
+      <div class="u-list-right">
+        ${km>0?`<span class="unidad-badge-b ${estadoKm}">${N(km)} km</span>`:''}
+        <span class="unidad-badge-b">${repuestos.length} rep.</span>
+        <span style="color:var(--muted);font-size:16px">›</span>
       </div>
-      `:''}
     </div>`;
   }).join('');
 }
 window._renderUnidades=renderUnidades;
+
+// Abrir detalle de una unidad
+window.abrirDetalleUnidad=function(id){
+  const u=unidades.find(x=>x.id===id);
+  if(!u)return;
+  window._unidadDetalleId=id;
+  window._repuestoEditandoDet=null;
+  document.getElementById('u-vista-lista').style.display='none';
+  document.getElementById('u-vista-detalle').style.display='block';
+  renderDetalleUnidad(u);
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+// Volver a la lista
+window.volverListaUnidades=function(){
+  window._unidadDetalleId=null;
+  window._repuestoEditandoDet=null;
+  document.getElementById('u-vista-lista').style.display='block';
+  document.getElementById('u-vista-detalle').style.display='none';
+  renderUnidades();
+}
+
+// Toggle formulario nueva unidad
+window.toggleFormNuevaUnidad=function(){
+  const f=document.getElementById('form-nueva-unidad');
+  f.classList.toggle('open');
+}
+
+// Renderiza el encabezado y la tabla de repuestos del detalle
+function renderDetalleUnidad(u){
+  // Encabezado
+  const km=u.kmAcumulado||0;
+  const estadoKm=km>=KM_ALERTA?'rojo':km>=KM_ALERTA*0.8?'naranja':'';
+  const enc=document.getElementById('det-encabezado');
+  enc.innerHTML=`
+    <div style="flex:1">
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <span style="font-size:26px">${u.tipo==='camion'?'🚚':'🔧'}</span>
+        <div>
+          <div class="det-placa">${u.identificador}</div>
+          ${u.marcaUnidad?`<div class="det-marca">${u.marcaUnidad}</div>`:''}
+        </div>
+      </div>
+      <div class="det-meta">
+        ${u.modeloUnidad?`<span class="det-meta-item">📅 Modelo: <strong>${u.modeloUnidad}</strong></span>`:''}
+        ${u.lineaUnidad?`<span class="det-meta-item">⚙️ Línea: <strong>${u.lineaUnidad}</strong></span>`:''}
+        ${u.serieUnidad?`<span class="det-meta-item">🔢 Serie: <strong style="font-family:monospace">${u.serieUnidad}</strong></span>`:''}
+        ${km>0?`<span class="det-meta-item">📍 <strong style="color:${estadoKm==='rojo'?'var(--danger)':estadoKm==='naranja'?'var(--warning)':'var(--success)'}">${N(km)} km</strong></span>`:''}
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px">
+      <span class="det-badge-count">${(u.repuestos||[]).length} repuestos</span>
+      <button id="btn-borrar-unidad-${u.id}" class="btn btn-danger btn-sm" onclick="borrarUnidad('${u.id}')">Borrar unidad</button>
+    </div>`;
+
+  // Poblar selector de categorías del formulario
+  const sel=document.getElementById('det-rp-cat');
+  const catActual=sel.value;
+  sel.innerHTML=getCategorias().map(c=>`<option value="${c}">${c}</option>`).join('')+'<option value="__nueva__">＋ Nueva categoría...</option>';
+  if(catActual) sel.value=catActual;
+
+  // Poblar filtro de categorías de la tabla
+  const filtro=document.getElementById('det-filtro-cat');
+  const filtroVal=filtro.value;
+  const cats=[...new Set((u.repuestos||[]).map(r=>r.categoria).filter(Boolean))].sort();
+  filtro.innerHTML='<option value="">Todas las categorías</option>'+cats.map(c=>`<option value="${c}">${c}</option>`).join('');
+  filtro.value=filtroVal;
+
+  // Restaurar campos si estamos editando
+  if(window._repuestoEditandoDet!==null){
+    const r=(u.repuestos||[])[window._repuestoEditandoDet];
+    if(r){
+      document.getElementById('det-form-titulo').textContent='✎ Editando repuesto';
+      document.getElementById('det-btn-cancelar-edit').style.display='';
+      document.getElementById('det-rp-cat').value=r.categoria||'';
+      document.getElementById('det-rp-esp').value=r.especificacion||'';
+      document.getElementById('det-rp-num').value=r.numeroParte||'';
+      document.getElementById('det-rp-marca').value=r.marca||'';
+      document.getElementById('det-rp-notas').value=r.notas||'';
+      const fotos=[...(r.fotos||[])];if(!fotos.length&&r.fotoUrl)fotos.push(r.fotoUrl);
+      if(fotos.length){
+        document.getElementById('det-rp-foto-estado').textContent=`Ya tiene ${fotos.length} foto(s). Selecciona más para agregar, o deja vacío para conservar.`;
+      }
+    }
+  } else {
+    document.getElementById('det-form-titulo').textContent='＋ Agregar repuesto';
+    document.getElementById('det-btn-cancelar-edit').style.display='none';
+  }
+
+  filtrarTablaDetalle(u);
+}
+
+// Filtrar tabla de repuestos por búsqueda y/o categoría
+window.filtrarTablaDetalle=function(uParam){
+  const u=uParam||(unidades.find(x=>x.id===window._unidadDetalleId));
+  if(!u)return;
+  const buscar=(document.getElementById('det-buscar').value||'').toLowerCase();
+  const catFil=(document.getElementById('det-filtro-cat').value||'');
+  const repuestos=(u.repuestos||[]).filter((r,_i)=>{
+    if(catFil && r.categoria!==catFil) return false;
+    if(buscar){
+      const haystack=[r.categoria,r.especificacion,r.numeroParte,r.marca,r.notas].filter(Boolean).join(' ').toLowerCase();
+      if(!haystack.includes(buscar)) return false;
+    }
+    return true;
+  });
+  const tbody=document.getElementById('det-tbody');
+  const empty=document.getElementById('det-empty');
+  if(!repuestos.length){
+    tbody.innerHTML='';
+    empty.style.display='block';
+    return;
+  }
+  empty.style.display='none';
+  tbody.innerHTML=(u.repuestos||[]).map((r,i)=>{
+    // Verificar si pasa el filtro
+    if(catFil && r.categoria!==catFil) return '';
+    if(buscar){
+      const haystack=[r.categoria,r.especificacion,r.numeroParte,r.marca,r.notas].filter(Boolean).join(' ').toLowerCase();
+      if(!haystack.includes(buscar)) return '';
+    }
+    const fotos=[...(r.fotos||[])];if(!fotos.length&&r.fotoUrl)fotos.push(r.fotoUrl);
+    const fotasHtml=fotos.length
+      ? fotos.map(url=>`<img class="det-foto-thumb" src="${url}" onclick="window.open('${url}','_blank')" title="Ver foto completa"/>`).join('')
+      : '—';
+    return `<tr>
+      <td><span class="det-cat-badge">${r.categoria||'—'}</span></td>
+      <td><span class="det-spec">${r.especificacion||'—'}</span>${r.notas?`<br><span style="font-size:11px;color:var(--muted)">${r.notas}</span>`:''}</td>
+      <td style="font-family:monospace;font-size:12px">${r.numeroParte||'—'}</td>
+      <td style="font-size:13px">${r.marca||'—'}</td>
+      <td style="white-space:nowrap">${fotasHtml}</td>
+      <td>
+        <div style="display:flex;gap:6px">
+          <button class="btn btn-sm" onclick="editarRepuestoDetalle(${i})" style="background:var(--accent);color:#fff;border:none">✎</button>
+          <button class="btn btn-danger btn-sm" id="btn-borrar-rp-det-${i}" onclick="borrarRepuesto('${u.id}',${i})">✕</button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+// Editar repuesto desde el detalle
+window.editarRepuestoDetalle=function(idx){
+  window._repuestoEditandoDet=idx;
+  const u=unidades.find(x=>x.id===window._unidadDetalleId);
+  if(u) renderDetalleUnidad(u);
+  setTimeout(()=>{
+    const el=document.getElementById('det-rp-esp');
+    if(el){ el.scrollIntoView({behavior:'smooth',block:'center'}); el.focus(); }
+  },60);
+}
+
+window.cancelarEdicionDetalle=function(){
+  window._repuestoEditandoDet=null;
+  const u=unidades.find(x=>x.id===window._unidadDetalleId);
+  if(u) renderDetalleUnidad(u);
+  // Limpiar campos
+  ['det-rp-esp','det-rp-num','det-rp-marca','det-rp-notas'].forEach(id=>{document.getElementById(id).value='';});
+  document.getElementById('det-rp-foto-estado').textContent='';
+}
+
+// Previsualizar fotos en el detalle
+window.previsualizarFotosDetalle=function(input){
+  const files=Array.from(input.files);
+  if(!files.length)return;
+  const prev=document.getElementById('det-rp-foto-preview');
+  prev.style.display='block';
+  prev.innerHTML='<div style="display:flex;flex-wrap:wrap;gap:6px">'+files.map(f=>`<img src="${URL.createObjectURL(f)}" style="width:72px;height:72px;object-fit:cover;border-radius:6px;border:1px solid var(--border)"/>`).join('')+'</div>';
+  document.getElementById('det-rp-foto-estado').textContent=files.length+' foto(s) seleccionada(s)';
+}
+
+// Agregar categoría desde el detalle
+window.agregarCategoriaDetalle=async function(){
+  const input=document.getElementById('det-rp-nueva-cat');
+  const nombre=input.value.trim();
+  if(!nombre){ toast('Escribe el nombre de la nueva categoría',false); return; }
+  if(getCategorias().includes(nombre)){ toast('Esa categoría ya existe',false); return; }
+  config.categoriasRepuesto=[...(config.categoriasRepuesto||[]),nombre];
+  await saveConfig();
+  toast('Categoría "'+nombre+'" guardada');
+  const sel=document.getElementById('det-rp-cat');
+  const opt=document.createElement('option'); opt.value=nombre; opt.textContent=nombre; opt.selected=true;
+  sel.insertBefore(opt, sel.querySelector('option[value="__nueva__"]'));
+  sel.value=nombre;
+  input.value=''; input.style.display='none';
+  document.getElementById('det-btn-nueva-cat').style.display='none';
+}
+
+// Guardar repuesto desde el detalle
+window.guardarRepuestoDetalle=async function(){
+  const unidadId=window._unidadDetalleId;
+  if(!unidadId)return;
+  const cat=document.getElementById('det-rp-cat').value;
+  const esp=document.getElementById('det-rp-esp').value.trim();
+  const num=document.getElementById('det-rp-num').value.trim();
+  const marca=document.getElementById('det-rp-marca').value.trim();
+  const notas=document.getElementById('det-rp-notas').value.trim();
+  if(!esp && !num){ toast('Ingresa al menos la especificación o el número de parte',false); return; }
+  const u=unidades.find(x=>x.id===unidadId);
+  if(!u)return;
+  const editando=window._repuestoEditandoDet;
+  let fotosExistentes = editando!==null ? ([...((u.repuestos||[])[editando]?.fotos||[])]) : [];
+  if(editando!==null && !fotosExistentes.length && (u.repuestos||[])[editando]?.fotoUrl){
+    fotosExistentes=[(u.repuestos||[])[editando].fotoUrl];
+  }
+  const fotoInput=document.getElementById('det-rp-foto');
+  const estadoEl=document.getElementById('det-rp-foto-estado');
+  if(fotoInput && fotoInput.files && fotoInput.files.length>0){
+    const archivos=Array.from(fotoInput.files);
+    estadoEl.textContent=`Subiendo ${archivos.length} foto(s)...`;
+    for(let i=0;i<archivos.length;i++){
+      try{
+        const url=await subirFotoCloudinary(archivos[i], unidadId, i);
+        fotosExistentes.push(url);
+        estadoEl.textContent=`Foto ${i+1}/${archivos.length} subida ✓`;
+      }catch(e){ toast(`No se pudo subir la foto ${i+1}`,false); }
+    }
+    estadoEl.textContent=`${fotosExistentes.length} foto(s) guardadas ✓`;
+  }
+  let repuestos;
+  if(editando!==null){
+    repuestos=[...(u.repuestos||[])];
+    repuestos[editando]={categoria:cat,especificacion:esp,numeroParte:num,marca,notas,fotos:fotosExistentes,fotoUrl:''};
+  } else {
+    repuestos=[...(u.repuestos||[]),{categoria:cat,especificacion:esp,numeroParte:num,marca,notas,fotos:fotosExistentes,fotoUrl:''}];
+  }
+  const btn=document.getElementById('det-btn-guardar-rp');
+  btn.disabled=true; btn.textContent='Guardando...';
+  try{
+    await updateDoc(doc(db,'unidades',unidadId),{repuestos});
+    toast(editando!==null?'Repuesto actualizado':'Repuesto agregado');
+    window._repuestoEditandoDet=null;
+    ['det-rp-esp','det-rp-num','det-rp-marca','det-rp-notas'].forEach(id=>{document.getElementById(id).value='';});
+    document.getElementById('det-rp-foto-estado').textContent='';
+    document.getElementById('det-rp-foto-preview').style.display='none';
+    fotoInput.value='';
+  }catch(e){ toast('Error: '+e.message,false); }
+  btn.disabled=false; btn.textContent='Guardar repuesto';
+}
 
 // ── Kilometraje ──────────────────────────────────────────────
 const KM_ALERTA=15000;
