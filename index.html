@@ -1551,6 +1551,7 @@ window.borrarRepuesto=async function(unidadId, idx){
     const repuestos=(u.repuestos||[]).filter((_,i)=>i!==idx);
     try{ await updateDoc(doc(db,'unidades',unidadId), {repuestos}); toast('Repuesto eliminado',false); }
     catch(e){ toast('Error: '+e.message,false); }
+    closeDotMenus();
     return;
   }
   window._pendienteBorrar[btnId]={
@@ -1765,7 +1766,7 @@ window.filtrarTablaDetalle=function(uParam){
           <button class="dot-menu-btn" onclick="toggleDotMenu(event,'dot-${u.id}-${i}')">⋮</button>
           <div class="dot-menu-dropdown" id="dot-${u.id}-${i}">
             <button class="dot-menu-item" onclick="closeDotMenus();editarRepuestoDetalle(${i})">✎ &nbsp;Editar</button>
-            <button class="dot-menu-item danger" onclick="closeDotMenus();borrarRepuesto('${u.id}',${i})">🗑 &nbsp;Eliminar</button>
+            <button id="btn-borrar-rp-${u.id}-${i}" class="dot-menu-item danger" onclick="event.stopPropagation();borrarRepuesto('${u.id}',${i})">🗑 &nbsp;Eliminar</button>
           </div>
         </div>
       </td>
