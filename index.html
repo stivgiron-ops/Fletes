@@ -305,6 +305,7 @@ tr:hover td{background:#f8fafc}
         <option value="">Todos los productos</option>
         <option>Maíz</option><option>Soya</option><option>Otro</option>
       </select>
+      <input type="text" id="fil-boleta" onchange="renderTabla()" oninput="renderTabla()" placeholder="🔍 N° boleta..." style="max-width:140px;background:#fff;border:1px solid var(--border);border-radius:7px;padding:8px 10px;color:var(--text);font-size:13px;outline:none;font-family:'Inter',sans-serif"/>
       <input type="date" id="fil-desde" onchange="renderTabla()" title="Desde" style="max-width:140px"/>
       <input type="date" id="fil-hasta" onchange="renderTabla()" title="Hasta" style="max-width:140px"/>
     </div>
@@ -383,7 +384,7 @@ tr:hover td{background:#f8fafc}
     <p style="font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:14px">
       <strong style="color:var(--text)">FLETES</strong> es una aplicación web (PWA) desarrollada a la medida para
       Transportes Ruano Alvarado. Centraliza la gestión de viajes, pilotos, rutas, combustible, impuestos,
-      unidades y repuestos — todo en un solo archivo sincronizado en tiempo real con Firebase y publicado en GitHub Pages.
+      unidades, repuestos y kilometraje — todo sincronizado en tiempo real con Firebase y publicado en GitHub Pages.
     </p>
     <div class="section-label">¿Qué hace cada módulo?</div>
     <div class="config-item">
@@ -392,7 +393,7 @@ tr:hover td{background:#f8fafc}
     </div>
     <div class="config-item">
       <span style="font-weight:600;color:var(--accent)">📋 Viajes</span>
-      <span style="font-size:12px;color:var(--muted);text-align:right;max-width:60%">Lista todos los viajes con filtros por piloto, producto y rango de fechas. Muestra estadísticas del mes y permite exportar a Excel con formato completo.</span>
+      <span style="font-size:12px;color:var(--muted);text-align:right;max-width:60%">Lista todos los viajes con filtros por piloto, producto, boleta y rango de fechas. Estadísticas del mes y exportación a Excel.</span>
     </div>
     <div class="config-item">
       <span style="font-weight:600;color:var(--accent)">⚙️ Ajustes</span>
@@ -404,18 +405,20 @@ tr:hover td{background:#f8fafc}
     </div>
     <div class="config-item">
       <span style="font-weight:600;color:var(--accent)">🚚 Unidades</span>
-      <span style="font-size:12px;color:var(--muted);text-align:right;max-width:60%">Registra camiones (por placa) y equipos (por número) con sus repuestos: categoría, especificación, número de parte, marca y notas. Categorías personalizables.</span>
+      <span style="font-size:12px;color:var(--muted);text-align:right;max-width:60%">Registra camiones y equipos con vista de detalle por unidad. Cada unidad tiene su catálogo de repuestos con categoría, especificación, número de parte, marca, notas y fotos (múltiples por repuesto vía Cloudinary). Incluye búsqueda y filtro por categoría.</span>
     </div>
     <div class="config-item">
       <span style="font-weight:600;color:var(--accent)">📍 Kilometraje</span>
-      <span style="font-size:12px;color:var(--muted);text-align:right;max-width:60%">Acumula automáticamente los km por camión con cada viaje registrado. Alerta a los 15,000 km para mantenimiento. Muestra rendimiento km/galón por viaje y promedio.</span>
+      <span style="font-size:12px;color:var(--muted);text-align:right;max-width:60%">Acumula automáticamente los km por camión con cada viaje registrado. Alerta a los 15,000 km para mantenimiento. Muestra rendimiento km/galón por viaje y promedio por unidad.</span>
     </div>
     <div class="section-label" style="margin-top:20px">Información técnica</div>
+    <div class="config-item"><span>Versión</span><strong style="font-size:12px">v2.0 — julio 2026</strong></div>
     <div class="config-item"><span>Repositorio</span><strong style="font-size:12px;color:var(--accent)">github.com/stivgiron-ops/Fletes</strong></div>
     <div class="config-item"><span>URL de la app</span><strong style="font-size:12px;color:var(--accent)">stivgiron-ops.github.io/Fletes</strong></div>
     <div class="config-item"><span>Hosting</span><strong style="font-size:12px">GitHub Pages (gratuito)</strong></div>
     <div class="config-item"><span>Base de datos</span><strong style="font-size:12px">Firebase Firestore (tiempo real)</strong></div>
     <div class="config-item"><span>Autenticación</span><strong style="font-size:12px">Firebase Authentication</strong></div>
+    <div class="config-item"><span>Almacenamiento de fotos</span><strong style="font-size:12px">Cloudinary (gratuito)</strong></div>
     <div class="config-item"><span>Tipo</span><strong style="font-size:12px">PWA — instalable en Android, iOS y PC</strong></div>
     <div class="config-item"><span>Desarrollado por</span><strong style="font-size:12px">Edinson Stiv Girón Hernández</strong></div>
     <div class="section-label" style="margin-top:20px">Código fuente</div>
@@ -976,11 +979,13 @@ function renderTabla(){
   const fprod=document.getElementById('fil-producto').value;
   const fdesde=document.getElementById('fil-desde').value;
   const fhasta=document.getElementById('fil-hasta').value;
+  const fboleta=(document.getElementById('fil-boleta')?.value||'').trim().toLowerCase();
   let data=viajes.filter(v=>{
     if(fp&&v.piloto!==fp)return false;
     if(fprod&&v.producto!==fprod)return false;
     if(fdesde&&v.fecha<fdesde)return false;
     if(fhasta&&v.fecha>fhasta)return false;
+    if(fboleta&&!(v.boleta||'').toLowerCase().includes(fboleta))return false;
     return true;
   });
   const tbody=document.getElementById('tabla-body');
@@ -1464,16 +1469,31 @@ window.previsualizarFotos=function(input, uid){
 window.previsualizarFotos=window.previsualizarFotos;
 
 async function subirFotoCloudinary(file, unidadId, idx){
-  const estado=document.getElementById('rp-foto-estado-'+unidadId);
+  // Validar tamaño (máx 8MB)
+  if(file.size > 8*1024*1024){
+    throw new Error(`La foto ${idx+1} supera el tamaño máximo de 8MB`);
+  }
+  const estado=document.getElementById('rp-foto-estado-'+unidadId)||document.getElementById('det-rp-foto-estado');
   if(estado) estado.textContent=`Subiendo foto ${idx+1}...`;
   const fd=new FormData();
   fd.append('file', file);
   fd.append('upload_preset', CLOUDINARY_PRESET);
   fd.append('folder', 'fletes/repuestos');
-  const r=await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/image/upload`,{method:'POST',body:fd});
-  if(!r.ok) throw new Error('Error al subir la foto');
-  const data=await r.json();
-  return data.secure_url;
+  // Timeout de 30 segundos
+  const controller=new AbortController();
+  const timer=setTimeout(()=>controller.abort(), 30000);
+  try{
+    const r=await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/image/upload`,{method:'POST',body:fd,signal:controller.signal});
+    clearTimeout(timer);
+    if(!r.ok) throw new Error(`Error del servidor (${r.status})`);
+    const data=await r.json();
+    if(estado) estado.textContent=`Foto ${idx+1} subida ✓`;
+    return data.secure_url;
+  }catch(e){
+    clearTimeout(timer);
+    if(e.name==='AbortError') throw new Error(`Tiempo de espera agotado subiendo foto ${idx+1} — revisa tu conexión`);
+    throw e;
+  }
 }
 
 window._repuestoEditando=null; // {unidadId, idx} o null
